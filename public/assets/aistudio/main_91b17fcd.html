@@ -1,0 +1,2292 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keeta Order &amp; Fuel Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* Layout: login page with SOP flow, then a sticky top bar (logo, language, user) with tabs: Orders, Fuel, Report, Employees. Entries are added in modals.
+   Report is a paper-style sheet that prints with the RH logo as a page watermark. */
+:root{
+  --bg:#f2f3ef;
+  --surface:#ffffff;
+  --ink:#16181b;
+  --muted:#5d646c;
+  --line:#dfe2dc;
+  --accent:#ffd21f;
+  --accent-ink:#16181b;
+  --accent-soft:#fff3b8;
+  --danger:#bf3a2b;
+  --ok:#1f7a4d;
+  --radius:10px;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'DM Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'DM Mono',ui-monospace,Consolas,monospace;
+}
+html[lang="ar"],html[lang="ur"]{--display:'Noto Sans Arabic','Segoe UI',Tahoma,sans-serif;--body:'Noto Sans Arabic','Segoe UI',Tahoma,sans-serif}
+html[lang="bn"]{--display:'Noto Sans Bengali','Nirmala UI',sans-serif;--body:'Noto Sans Bengali','Nirmala UI',sans-serif}
+html[lang="hi"]{--display:'Noto Sans Devanagari','Nirmala UI',sans-serif;--body:'Noto Sans Devanagari','Nirmala UI',sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;unicode-bidi:isolate}
+
+/* top bar */
+.topbar{background:var(--ink);color:#fff;position:sticky;top:0;z-index:20}
+.topbar-in{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
+.brand{display:flex;align-items:center;gap:12px;margin-inline-end:auto;min-width:0}
+.brand-mark{width:44px;height:44px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:18px;flex:none}
+.logo-tile{width:44px;height:44px;border-radius:10px;background:#fff;display:grid;place-items:center;padding:4px;flex:none;overflow:hidden}
+.logo-tile img{max-width:100%;max-height:100%;display:block}
+.brand-name{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.02em;line-height:1.1}
+.brand-sub{font-size:12px;color:#aab0b7;margin-top:2px}
+.pill{display:flex;align-items:center;gap:8px;background:#262a2f;border-radius:8px;padding:0 12px;min-width:0}
+.pill i{color:var(--accent)}
+.pill input,.pill select{background:transparent;border:0;color:#fff;padding:10px 0;min-width:0}
+.pill input{width:190px;max-width:100%}
+.pill input::placeholder{color:#8b929a}
+.pill select{cursor:pointer;color-scheme:dark;padding-inline-end:4px}
+.pill select option{background:#262a2f;color:#fff}
+.pill input:focus-visible,.pill select:focus-visible{outline:none}
+.pill:focus-within{outline:3px solid var(--accent)}
+.tabs{display:flex;gap:4px;width:100%;max-width:1180px;margin:0 auto;padding:0 16px;overflow-x:auto}
+.tab{background:transparent;border:0;color:#aab0b7;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+.tab:not([aria-selected="true"]):hover{color:#fff}
+
+/* page */
+.page{max-width:1180px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;min-width:0}
+.card h2{font-family:var(--display);font-size:19px;margin:0 0 14px}
+.card h2 small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:13px;margin-inline-start:8px}
+
+/* form */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;align-items:end}
+.field{display:grid;gap:6px;min-width:0}
+.field label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.field label em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ok)}
+.input{border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;min-width:0;width:100%;text-align:start}
+.input:focus-visible{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px var(--accent)}
+.with-now{display:flex;gap:6px}
+.with-now .input{flex:1}
+.result{border:1.5px dashed var(--line);border-radius:8px;padding:8px 12px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-height:44px}
+.result strong{font-family:var(--mono);font-size:19px;font-weight:500}
+.result small{color:var(--muted)}
+.form-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.hint{margin:14px 0 0;color:var(--muted);font-size:13px;max-width:78ch}
+
+.btn{border:1.5px solid var(--ink);background:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;line-height:1.2}
+.btn:hover{background:#f4f4ef}
+.btn-primary{background:var(--accent);border-color:var(--ink);color:var(--accent-ink)}
+.btn-primary:hover{background:#ffdb4d}
+.btn-quiet{border-color:var(--line);color:var(--muted)}
+.btn-sm{padding:6px 10px;font-size:13px}
+.btn-now{padding:0 11px;border-color:var(--line);color:var(--muted);white-space:nowrap}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;display:inline-grid;place-items:center;color:var(--muted)}
+.icon-btn:hover:not(:disabled){color:var(--ink);border-color:var(--ink)}
+.icon-btn:disabled{opacity:.4;cursor:default}
+.icon-btn.del:hover{color:var(--danger);border-color:var(--danger)}
+
+/* toolbar + table */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px}
+.toolbar .field{flex:0 1 auto}
+.toolbar .grow{flex:1 1 220px}
+.searchbox{position:relative}
+.searchbox i{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.searchbox .input{padding-inline-start:34px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:10px 12px;text-align:start;white-space:nowrap}
+thead th{background:#f7f8f4;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);font-weight:700}
+tbody td{border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fcfcf8}
+.th-btn{background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-transform:inherit;letter-spacing:inherit;font-weight:inherit;color:inherit}
+.th-btn i{font-size:11px;opacity:.5}
+.th-btn.on{color:var(--ink)}
+.th-btn.on i{opacity:1}
+.end{text-align:end}
+.chip{display:inline-block;background:var(--accent-soft);border:1px solid #e9d26a;border-radius:99px;padding:2px 10px;font-family:var(--mono);font-size:13px;font-weight:500;unicode-bidi:isolate}
+.actions{display:flex;gap:6px;justify-content:flex-end}
+.tfoot-bar{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between;align-items:center;margin-top:14px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--muted)}
+.stats b{color:var(--ink);font-family:var(--mono);font-weight:500;unicode-bidi:isolate}
+.pager{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.empty{text-align:center;padding:36px 16px;color:var(--muted);display:grid;gap:12px;justify-items:center}
+.empty i{font-size:30px;color:#c3c8bf}
+.editing-note{background:var(--accent-soft);border:1px solid #e9d26a;border-radius:8px;padding:8px 12px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:600}
+
+/* report */
+.report-controls{display:grid;gap:12px}
+.controls-row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{background:#fff;border:0;padding:9px 14px;cursor:pointer;font-weight:600}
+.seg button+button{border-inline-start:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.sheet{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px;display:grid;gap:26px;min-width:0}
+.sheet-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;border-bottom:3px solid var(--ink);padding-bottom:16px}
+.sheet-brand{display:flex;align-items:center;gap:12px}
+.sheet-brand .logo-tile,.sheet-brand .brand-mark{width:56px;height:56px;background:#fff;border:1px solid var(--line)}
+.sheet-brand .brand-mark{background:var(--accent)}
+.sheet-title{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.1;letter-spacing:.02em}
+.sheet-sub{color:var(--muted);margin-top:4px}
+.meta{display:grid;gap:3px;text-align:end}
+.meta div{display:flex;gap:8px;justify-content:flex-end}
+.meta span{color:var(--muted)}
+.day{display:grid;gap:8px;break-inside:avoid}
+.day-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.day-head h3{font-family:var(--display);font-size:17px;margin:0}
+.day-head span{color:var(--muted);font-size:13px}
+.day table th,.day table td{padding:7px 12px}
+.totals{display:grid;grid-template-columns:repeat(var(--n,3),1fr);border:1.5px solid var(--ink);border-radius:8px;overflow:hidden}
+.totals div{padding:8px 12px;display:grid;gap:2px;min-width:0}
+.totals div+div{border-inline-start:1.5px solid var(--ink)}
+.totals span{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.totals strong{font-family:var(--mono);font-weight:500;font-size:15px;unicode-bidi:isolate}
+.section-title{font-family:var(--display);font-size:20px;margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.section-title::after{content:"";height:2px;background:var(--line);flex:1}
+.sum-table tfoot td{font-weight:700;background:#f7f8f4;border-top:2px solid var(--ink)}
+.sign{display:none}
+.watermark{display:none}
+
+@media (max-width:640px){
+  .totals{grid-template-columns:1fr}
+  .totals div+div{border-inline-start:0;border-top:1.5px solid var(--ink)}
+  .meta,.meta div{text-align:start;justify-content:flex-start}
+  .sheet{padding:18px}
+  .pill input{width:140px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:transparent;font-size:12px}
+  .no-print{display:none!important}
+  .page{max-width:none;padding:0;gap:0}
+  .sheet{background:transparent;border:0;border-radius:0;padding:0;gap:20px}
+  .sheet-head{break-after:avoid}
+  .day{break-inside:avoid}
+  tr{break-inside:avoid}
+  thead{display:table-header-group}
+  .table-wrap{overflow:visible;border-color:#999}
+  th,td{padding:5px 9px!important}
+  thead th,.sum-table tfoot td{background:rgba(0,0,0,.07)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .brand-mark{background:var(--accent)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sign{display:flex;justify-content:space-between;margin-top:40px}
+  .sign div{border-top:1px solid #333;padding-top:4px;width:200px;text-align:center;font-size:11px}
+  /* RH logo watermark, repeated on every printed page */
+  .watermark{display:block;position:fixed;top:50%;left:50%;width:62%;max-width:150mm;height:auto;transform:translate(-50%,-50%);opacity:.09;z-index:-1;pointer-events:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* ---------- v2: modals, login, SOP, roles, employees ---------- */
+.card-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-head h2{margin:0}
+.btn-add{padding:10px 16px}
+.field.full{grid-column:1/-1}
+
+.modal-back{position:fixed;inset:0;background:rgba(14,16,18,.55);display:grid;place-items:center;padding:16px;z-index:100;overflow-y:auto}
+.modal{background:#fff;border:1.5px solid var(--ink);border-radius:14px;width:100%;max-width:540px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.modal.wide{max-width:760px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal-head h2{margin:0;font-family:var(--display);font-size:20px;display:flex;align-items:center;gap:10px}
+.modal-head h2 i{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:15px;flex:none}
+.modal-body{padding:18px;overflow-y:auto;display:grid;gap:16px}
+.modal-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;background:#f7f8f4;border-radius:0 0 13px 13px}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.sec-title{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:6px;margin-top:4px}
+.sec-title:first-child{margin-top:0}
+body.modal-open{overflow:hidden}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));border:1.5px solid var(--ink);border-radius:10px;overflow:hidden}
+.calc div{padding:10px 12px;display:grid;gap:2px;min-width:0}
+.calc div+div{border-inline-start:1.5px solid var(--ink)}
+.calc span{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.calc strong{font-family:var(--mono);font-weight:500;font-size:18px;unicode-bidi:isolate}
+.calc .hot{background:var(--accent-soft)}
+.calc .hot strong{font-size:24px}
+.calc-note{font-size:13px;color:var(--muted);margin:0}
+.calc-warn{font-size:13px;color:var(--danger);font-weight:600;margin:0}
+.ro{background:#f4f4ef;color:var(--muted)}
+
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700;border:1px solid var(--line);background:#f4f4ef;white-space:nowrap}
+.badge.admin{background:var(--ink);color:#fff;border-color:var(--ink)}
+.badge.supervisor{background:var(--accent);border-color:#cfa900;color:var(--accent-ink)}
+.badge.user{background:#eef1ec}
+.badge.ok{background:#e4f4ea;color:#14633b;border-color:#b8dfc7}
+.badge.warn{background:#fff3d6;color:#8a5a00;border-color:#efd08a}
+.badge.bad{background:#fbe5e1;color:var(--danger);border-color:#f0bdb5}
+.sub{display:block;font-size:12px;color:var(--muted)}
+.meter{height:6px;background:#ece9df;border-radius:99px;overflow:hidden;min-width:90px;margin-top:4px}
+.meter i{display:block;height:100%;background:var(--ok)}
+.meter.over i{background:var(--danger)}
+
+.userchip{display:flex;align-items:center;gap:10px;background:#262a2f;border-radius:8px;padding:4px 4px 4px 12px;padding-inline:12px 4px;min-width:0}
+.userchip .who{display:grid;line-height:1.2;min-width:0}
+.userchip .who b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.tb-btn{width:34px;height:34px;border-radius:7px;border:0;background:transparent;color:#cfd3d8;cursor:pointer;display:grid;place-items:center;flex:none}
+.tb-btn:hover{background:#3a3f46;color:#fff}
+.tb-btn:focus-visible{outline-color:var(--accent)}
+.pill.light{background:#fff;border:1.5px solid var(--line)}
+.pill.light i{color:var(--ink)}
+.pill.light select{color:var(--ink);color-scheme:light}
+.pill.light select option{background:#fff;color:var(--ink)}
+
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.settings h3{margin:0 0 6px;font-family:var(--display);font-size:16px}
+.settings p{margin:0 0 12px;color:var(--muted);font-size:13px;max-width:60ch}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+.row .field{flex:1 1 140px}
+
+/* login */
+.login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
+.login-side{background:var(--ink);color:#fff;padding:44px clamp(20px,4vw,60px);display:flex;flex-direction:column;gap:30px;position:relative;overflow:hidden}
+.login-side::after{content:"";position:absolute;inset-inline-end:-140px;bottom:-140px;width:380px;height:380px;border-radius:50%;border:52px solid rgba(255,210,31,.07);pointer-events:none}
+.login-brand{display:flex;align-items:center;gap:14px}
+.login-brand .logo-tile,.login-brand .brand-mark{width:64px;height:64px;border-radius:14px}
+.login-brand .brand-name{font-size:30px}
+.login-side h2{font-family:var(--display);font-size:22px;margin:0}
+.login-side .lead{margin:4px 0 0;color:#aab0b7;font-size:14px}
+.sop-steps{list-style:none;margin:0;padding:0;display:grid}
+.sop-step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;position:relative;padding-bottom:18px}
+.sop-step:last-child{padding-bottom:0}
+.sop-step::before{content:"";position:absolute;inset-inline-start:21px;top:46px;bottom:2px;width:2px;background:rgba(255,255,255,.18)}
+.sop-step:last-child::before{display:none}
+.sop-ico{width:44px;height:44px;border-radius:12px;background:#262a2f;border:1.5px solid rgba(255,255,255,.22);color:var(--accent);display:grid;place-items:center;font-size:17px;position:relative}
+.sop-ico b{position:absolute;inset-block-start:-7px;inset-inline-end:-7px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:500 11px var(--mono);display:grid;place-items:center}
+.sop-step h3{margin:2px 0;font-family:var(--display);font-size:16px}
+.sop-step p{margin:0;color:#aab0b7;font-size:13.5px;max-width:52ch}
+.sop-light .sop-ico{background:var(--accent-soft);border-color:#e9d26a;color:var(--ink)}
+.sop-light .sop-step::before{background:var(--line)}
+.sop-light .sop-step p{color:var(--muted)}
+.login-main{display:grid;align-content:center;justify-items:center;padding:72px 20px 32px;gap:18px;position:relative;background:var(--bg)}
+.login-lang{position:absolute;inset-block-start:16px;inset-inline-end:16px}
+.login-card{width:100%;max-width:420px;background:#fff;border:1.5px solid var(--ink);border-radius:14px;padding:26px;display:grid;gap:16px;box-shadow:8px 8px 0 var(--accent)}
+[dir="rtl"] .login-card{box-shadow:-8px 8px 0 var(--accent)}
+.login-card h1{margin:0;font-family:var(--display);font-size:28px;line-height:1.1}
+.login-card .lead{margin:4px 0 0;color:var(--muted);font-size:14px}
+.pwrap{position:relative}
+.pwrap .input{padding-inline-end:46px}
+.pwrap .icon-btn{position:absolute;inset-inline-end:5px;top:50%;transform:translateY(-50%);border:0;width:34px;height:34px}
+.iwrap{position:relative}
+.iwrap i.lead-ico{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.iwrap .input{padding-inline-start:36px}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--ink)}
+.err{background:#fbe5e1;border:1px solid #f0bdb5;color:var(--danger);border-radius:8px;padding:9px 12px;font-size:14px;font-weight:600;display:flex;gap:8px;align-items:center}
+.note{background:var(--accent-soft);border:1px solid #e9d26a;border-radius:8px;padding:10px 12px;font-size:13px;display:flex;gap:10px;align-items:flex-start}
+.note i{margin-top:3px}
+.btn-block{width:100%;justify-content:center;padding:12px 14px;font-size:16px}
+.role-list{display:grid;gap:10px;width:100%;max-width:420px}
+.role-list h3{margin:0;font-family:var(--display);font-size:15px}
+.role-item{display:grid;grid-template-columns:112px minmax(0,1fr);gap:10px;align-items:start;font-size:13px;color:var(--muted)}
+.sop-roles{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.sop-roles h3{margin:0;font-family:var(--display);font-size:16px}
+@media (max-width:860px){
+  .login{grid-template-columns:1fr}
+  .login-main{order:-1;padding-top:64px}
+  .login-side{padding:28px 20px}
+}
+@media (max-width:520px){
+  .mgrid{grid-template-columns:1fr}
+  .modal-foot .btn{flex:1 1 auto;justify-content:center}
+  .role-item{grid-template-columns:1fr}
+  .userchip .who b{max-width:90px}
+}
+/* ---------- v3: bottom navigation, scan, more menu ---------- */
+.bottomnav{display:none}
+.scan-top{padding:9px 14px}
+.scan-kind{display:flex;flex-wrap:wrap}
+.scan-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scan-btn{border:1.5px dashed var(--ink);background:var(--accent-soft);border-radius:12px;padding:18px 10px;cursor:pointer;display:grid;justify-items:center;gap:8px;font-weight:700}
+.scan-btn i{font-size:26px}
+.scan-btn:hover:not(:disabled){background:#ffeb85}
+.scan-btn:disabled{opacity:.5;cursor:default}
+.scan-preview{max-width:100%;max-height:220px;border-radius:10px;border:1px solid var(--line);justify-self:center}
+.scan-busy{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;padding:6px}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-box{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ai-toggle{width:100%;background:#f7f8f4;border:0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;font-weight:700}
+.ai-body{padding:14px;display:grid;gap:12px;border-top:1px solid var(--line)}
+.ai-body p{margin:0;color:var(--muted);font-size:13px}
+.err .detail{display:block;font-weight:400;font-size:12px;opacity:.85;word-break:break-word}
+.menu{display:grid;gap:8px}
+.menu-btn{display:flex;align-items:center;gap:12px;width:100%;text-align:start;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:13px 14px;font-weight:600;cursor:pointer}
+.menu-btn:hover{border-color:var(--ink)}
+.menu-btn i{width:20px;text-align:center;color:var(--muted)}
+.menu-btn.danger{color:var(--danger)}
+.menu-btn.danger i{color:var(--danger)}
+@media (max-width:720px){
+  .tabs{display:none}
+  .topbar-in .pill,.userchip,.scan-top{display:none}
+  .page{padding-bottom:112px}
+  .bottomnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;position:fixed;inset-inline:0;bottom:0;z-index:50;background:#fff;border-top:1.5px solid var(--ink);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));padding-inline:max(4px,env(safe-area-inset-left,0px)) max(4px,env(safe-area-inset-right,0px))}
+  .bn-item{background:none;border:0;display:grid;justify-items:center;gap:3px;padding:4px 2px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;min-width:0}
+  .bn-item i{width:54px;height:30px;display:grid;place-items:center;border-radius:99px;font-size:18px}
+  .bn-item span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bn-item[aria-current="page"]{color:var(--ink)}
+  .bn-item[aria-current="page"] i{background:var(--accent)}
+  .bn-item.bn-scan{color:var(--ink)}
+  .bn-item.bn-scan i{width:60px;height:60px;border-radius:50%;background:var(--ink);color:var(--accent);font-size:23px;margin-top:-30px;border:4px solid #fff;box-shadow:0 0 0 1.5px var(--ink),0 8px 16px rgba(0,0,0,.25)}
+  .bn-item.bn-scan span{margin-top:-2px}
+}
+@media (max-width:520px){
+  .modal-back{align-items:end;padding:0}
+  .modal{max-width:none;max-height:92vh;border-radius:16px 16px 0 0;border-inline-width:0;border-bottom-width:0}
+  .modal-foot{border-radius:0;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .scan-actions{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+@media print{
+  .login,.modal-back,.bottomnav{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.8/sweetalert2.all.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef, useContext } = React;
+
+/* ---------- settings you may want to change ---------- */
+const LOGO_URL = 'https://i.ibb.co/FLvXcxSc/RH-LOGO.png';
+const CURRENCY = 'SAR';
+const DEFAULT_PRICE = '2.18';
+
+/* ---------- storage ---------- */
+const LS_ORDERS = 'keeta_orders_v1';
+const LS_FUEL = 'keeta_fuel_v1';
+const LS_EMP = 'keeta_employee_v1';
+const LS_LANG = 'keeta_lang_v1';
+const LS_PRICE = 'keeta_price_v1';
+const load = (key, fallback) => {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch (e) { return fallback; }
+};
+const save = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage full or blocked */ }
+};
+
+/* ---------- translations ---------- */
+const LANGS = [
+  { code: 'en', label: 'English', dir: 'ltr', moment: 'en' },
+  { code: 'ar', label: 'العربية', dir: 'rtl', moment: 'ar-sa' },
+  { code: 'bn', label: 'বাংলা', dir: 'ltr', moment: 'bn' },
+  { code: 'ur', label: 'اردو', dir: 'rtl', moment: 'ur' }
+];
+
+const I18N = {
+en: {
+  'app.sub':'Order & fuel tracker','tab.orders':'Orders','tab.fuel':'Fuel','tab.report':'Report',
+  'emp.ph':'Employee name','lang':'Language',
+  'f.date':'Date','f.auto':'auto','f.orderId':'Order ID','f.orderIdPh':'e.g. KT-2054','f.accept':'Order accept','f.delivery':'Delivery','f.now':'Now','f.nowTip':'Use current time','f.take':'Take time','f.nextDay':'next day','f.a2d':'accept to delivery',
+  'ord.new':'New order','ord.edit':'Edit order','edit.note':'Editing an existing entry. Save to update it or cancel to discard changes.',
+  'btn.save':'Save order','btn.update':'Update order','btn.clear':'Clear','btn.cancelEdit':'Cancel edit',
+  'ord.title':'Orders','n.saved':'{n} saved',
+  'tbl.search':'Search','tbl.orderSearchPh':'Order ID or date','tbl.from':'From','tbl.to':'To','tbl.rows':'Rows','tbl.clearFilters':'Clear filters','tbl.deleteAll':'Delete all',
+  'col.sl':'Sl','col.date':'Date','col.orderId':'Order ID','col.accept':'Accept','col.delivery':'Delivery','col.take':'Take time','col.actions':'Actions',
+  'tbl.noMatch':'No entries match these filters.',
+  'st.orders':'Orders','st.totalTime':'Total time','st.average':'Average',
+  'pg.range':'{a}–{b} of {c}','pg.page':'Page {c} / {p}','pg.prev':'Previous page','pg.next':'Next page',
+  'act.edit':'Edit','act.delete':'Delete','aria.editOrder':'Edit order {id}','aria.delOrder':'Delete order {id}',
+  'empty.orders':'No orders yet. Add the first one above, or try the tool with sample data.','btn.sample':'Load sample orders',
+  'w.missingTitle':'Missing details','w.missingOrder':'Enter the order ID, accept time and delivery time.',
+  'w.dupTitle':'Duplicate order','w.dupOrder':'Order {id} is already recorded on {date}.',
+  'w.wrapTitle':'Delivery is earlier than accept','w.wrapText':'Count the delivery as the next day (after midnight)?','w.wrapYes':'Yes, next day','w.wrapNo':'No, fix the time',
+  'w.delOrderTitle':'Delete order {id}?','w.keep':'Keep','w.delete':'Delete','w.cancel':'Cancel',
+  'w.delAllTitle':'Delete all {what}?','w.delAllText':'This removes all {n} saved entries from this browser. It cannot be undone.','w.delAllYes':'Delete everything',
+  'x.orders':'orders','x.fuel':'fuel entries',
+  'toast.orderSaved':'Order {id} saved','toast.updated':'Entry updated','toast.deleted':'Entry deleted','toast.allDeleted':'Everything deleted','toast.sample':'Sample entries added',
+  'u.min':'min','u.h':'h','u.m':'m','u.km':'km','u.l':'L','u.kmpl':'km/L',
+  'fuel.new':'New fuel entry','fuel.edit':'Edit fuel entry',
+  'f.time':'Time','f.vehicle':'Vehicle','f.optional':'optional','f.vehiclePh':'Plate or ID','f.odo':'Odometer (km)','f.odoPh':'e.g. 0166626','f.liters':'Liters','f.litersPh':'e.g. 2.18','f.price':'Price per liter ({cur})','f.pricePh':'e.g. 2.18',
+  'f.distance':'Distance','f.kmpl':'Mileage','f.cost':'Cost',
+  'fuel.prevNote':'Previous reading: {odo} km','fuel.firstNote':'First reading for this vehicle',
+  'fuel.hint':'Distance is this odometer reading minus the previous reading of the same vehicle. Mileage is that distance divided by the liters in this fill (fill the tank each time for accurate results).',
+  'fuel.save':'Save fuel entry','fuel.update':'Update fuel entry','fuel.title':'Fuel entries',
+  'fuel.allVehicles':'All vehicles','fuel.searchPh':'Vehicle or odometer',
+  'col.time':'Time','col.vehicle':'Vehicle','col.odo':'Odometer','col.distance':'Distance (km)','col.liters':'Liters','col.price':'Price/L','col.cost':'Cost ({cur})','col.kmpl':'km/L',
+  'col.orders':'Orders','col.fills':'Fills',
+  'st.fills':'Fills','st.liters':'Liters','st.distance':'Distance','st.kmpl':'Avg km/L','st.cost':'Cost',
+  'empty.fuel':'No fuel entries yet. Add the first one above, or try the tool with sample data.','btn.sampleFuel':'Load sample fuel entries',
+  'w.fuelMissing':'Enter the date, time, odometer reading and liters.',
+  'w.odoBad':'Odometer must be digits only, for example 0166626.','w.litersBad':'Liters must be a number above zero, for example 2.18.','w.priceBad':'Price per liter must be a number above zero.',
+  'w.odoDup':'This odometer reading is already recorded for this vehicle.',
+  'w.odoLowTitle':'Reading is lower than the previous one','w.odoLowText':'The previous reading is {prev} km and you entered {odo} km. Save anyway?','w.odoLowYes':'Save anyway','w.odoLowNo':'Check the reading',
+  'w.delFuelTitle':'Delete this fuel entry?','toast.fuelSaved':'Fuel entry saved',
+  'aria.editEntry':'Edit entry','aria.delEntry':'Delete entry',
+  'rep.typeOrders':'Orders report','rep.typeFuel':'Fuel report','rep.type':'Report type',
+  'q.today':'Today','q.yesterday':'Yesterday','q.week':'This week','q.month':'This month','q.all':'All',
+  'm.both':'Details + summary','m.details':'Details','m.summary':'Summary','btn.print':'Print report',
+  'rep.titleOrders':'Order time report','rep.titleFuel':'Fuel report','rep.employee':'Employee','rep.period':'Period','rep.printed':'Printed',
+  'rep.details':'Date-wise details','rep.summary':'Date-wise summary','rep.vehicleSummary':'Vehicle-wise summary',
+  'rep.noData':'No entries in this period. Change the dates above or add entries on the other tabs.',
+  'rep.totalOrders':'Total orders','rep.totalTime':'Total time','rep.average':'Average',
+  'rep.totalDays':'Total (days: {n})','rep.countOrders':'Orders: {n}','rep.countFills':'Fills: {n}',
+  'rep.fastest':'Fastest','rep.slowest':'Slowest',
+  'rep.totalFills':'Total fills','rep.totalLiters':'Total liters','rep.totalDistance':'Total distance','rep.avgKmpl':'Avg km/L','rep.totalCost':'Total cost',
+  'rep.sign1':'Employee signature','rep.sign2':'Supervisor signature',
+  'rep.pAll':'All dates','rep.pFrom':'From {a}','rep.pUpTo':'Up to {a}','rep.pRange':'{a} to {b}',
+  'w.nothingTitle':'Nothing to print','w.nothingText':'There are no entries in this period.',
+  'w.empTitle':'Employee name','w.empText':'The name appears in the report header.','w.empPh':'Enter employee name','w.empPrint':'Print','w.empBad':'Enter a name to print the report.',
+  'v.none':'No vehicle ID'
+},
+ar: {
+  'app.sub':'متتبع الطلبات والوقود','tab.orders':'الطلبات','tab.fuel':'الوقود','tab.report':'التقرير',
+  'emp.ph':'اسم الموظف','lang':'اللغة',
+  'f.date':'التاريخ','f.auto':'تلقائي','f.orderId':'رقم الطلب','f.orderIdPh':'مثال: KT-2054','f.accept':'قبول الطلب','f.delivery':'التسليم','f.now':'الآن','f.nowTip':'استخدام الوقت الحالي','f.take':'مدة التوصيل','f.nextDay':'اليوم التالي','f.a2d':'من القبول إلى التسليم',
+  'ord.new':'طلب جديد','ord.edit':'تعديل الطلب','edit.note':'تعديل سجل موجود. احفظ للتحديث أو ألغِ لتجاهل التغييرات.',
+  'btn.save':'حفظ الطلب','btn.update':'تحديث الطلب','btn.clear':'مسح','btn.cancelEdit':'إلغاء التعديل',
+  'ord.title':'الطلبات','n.saved':'{n} محفوظ',
+  'tbl.search':'بحث','tbl.orderSearchPh':'رقم الطلب أو التاريخ','tbl.from':'من','tbl.to':'إلى','tbl.rows':'الصفوف','tbl.clearFilters':'مسح التصفية','tbl.deleteAll':'حذف الكل',
+  'col.sl':'م','col.date':'التاريخ','col.orderId':'رقم الطلب','col.accept':'القبول','col.delivery':'التسليم','col.take':'المدة','col.actions':'إجراءات',
+  'tbl.noMatch':'لا توجد سجلات مطابقة للتصفية.',
+  'st.orders':'الطلبات','st.totalTime':'إجمالي الوقت','st.average':'المتوسط',
+  'pg.range':'{a}–{b} من {c}','pg.page':'صفحة {c} / {p}','pg.prev':'الصفحة السابقة','pg.next':'الصفحة التالية',
+  'act.edit':'تعديل','act.delete':'حذف','aria.editOrder':'تعديل الطلب {id}','aria.delOrder':'حذف الطلب {id}',
+  'empty.orders':'لا توجد طلبات بعد. أضف أول طلب أعلاه أو جرّب الأداة ببيانات تجريبية.','btn.sample':'تحميل طلبات تجريبية',
+  'w.missingTitle':'بيانات ناقصة','w.missingOrder':'أدخل رقم الطلب ووقت القبول ووقت التسليم.',
+  'w.dupTitle':'طلب مكرر','w.dupOrder':'الطلب {id} مسجل بالفعل بتاريخ {date}.',
+  'w.wrapTitle':'وقت التسليم قبل وقت القبول','w.wrapText':'هل تحتسب التسليم في اليوم التالي (بعد منتصف الليل)؟','w.wrapYes':'نعم، اليوم التالي','w.wrapNo':'لا، سأصحح الوقت',
+  'w.delOrderTitle':'حذف الطلب {id}؟','w.keep':'إبقاء','w.delete':'حذف','w.cancel':'إلغاء',
+  'w.delAllTitle':'حذف جميع {what}؟','w.delAllText':'سيتم حذف جميع السجلات المحفوظة ({n}) من هذا المتصفح ولا يمكن التراجع.','w.delAllYes':'حذف الكل',
+  'x.orders':'الطلبات','x.fuel':'سجلات الوقود',
+  'toast.orderSaved':'تم حفظ الطلب {id}','toast.updated':'تم تحديث السجل','toast.deleted':'تم حذف السجل','toast.allDeleted':'تم حذف كل شيء','toast.sample':'تمت إضافة بيانات تجريبية',
+  'u.min':'د','u.h':'س','u.m':'د','u.km':'كم','u.l':'لتر','u.kmpl':'كم/لتر',
+  'fuel.new':'تعبئة وقود جديدة','fuel.edit':'تعديل تعبئة الوقود',
+  'f.time':'الوقت','f.vehicle':'المركبة','f.optional':'اختياري','f.vehiclePh':'اللوحة أو الرقم','f.odo':'عداد المسافة (كم)','f.odoPh':'مثال: 0166626','f.liters':'اللترات','f.litersPh':'مثال: 2.18','f.price':'سعر اللتر ({cur})','f.pricePh':'مثال: 2.18',
+  'f.distance':'المسافة','f.kmpl':'الاستهلاك','f.cost':'التكلفة',
+  'fuel.prevNote':'القراءة السابقة: {odo} كم','fuel.firstNote':'أول قراءة لهذه المركبة',
+  'fuel.hint':'المسافة = قراءة العداد الحالية − القراءة السابقة لنفس المركبة. الاستهلاك = المسافة ÷ لترات هذه التعبئة (املأ الخزان في كل مرة لنتائج دقيقة).',
+  'fuel.save':'حفظ تعبئة الوقود','fuel.update':'تحديث تعبئة الوقود','fuel.title':'سجلات الوقود',
+  'fuel.allVehicles':'كل المركبات','fuel.searchPh':'المركبة أو قراءة العداد',
+  'col.time':'الوقت','col.vehicle':'المركبة','col.odo':'العداد','col.distance':'المسافة (كم)','col.liters':'اللترات','col.price':'سعر اللتر','col.cost':'التكلفة ({cur})','col.kmpl':'كم/لتر',
+  'col.orders':'الطلبات','col.fills':'التعبئات',
+  'st.fills':'التعبئات','st.liters':'اللترات','st.distance':'المسافة','st.kmpl':'متوسط كم/لتر','st.cost':'التكلفة',
+  'empty.fuel':'لا توجد سجلات وقود بعد. أضف أول سجل أعلاه أو جرّب الأداة ببيانات تجريبية.','btn.sampleFuel':'تحميل سجلات وقود تجريبية',
+  'w.fuelMissing':'أدخل التاريخ والوقت وقراءة العداد واللترات.',
+  'w.odoBad':'قراءة العداد أرقام فقط، مثل 0166626.','w.litersBad':'اللترات رقم أكبر من صفر، مثل 2.18.','w.priceBad':'سعر اللتر رقم أكبر من صفر.',
+  'w.odoDup':'قراءة العداد هذه مسجلة بالفعل لهذه المركبة.',
+  'w.odoLowTitle':'القراءة أقل من السابقة','w.odoLowText':'القراءة السابقة {prev} كم وأدخلت {odo} كم. هل تحفظ على أي حال؟','w.odoLowYes':'احفظ على أي حال','w.odoLowNo':'سأراجع القراءة',
+  'w.delFuelTitle':'حذف سجل الوقود هذا؟','toast.fuelSaved':'تم حفظ تعبئة الوقود',
+  'aria.editEntry':'تعديل السجل','aria.delEntry':'حذف السجل',
+  'rep.typeOrders':'تقرير الطلبات','rep.typeFuel':'تقرير الوقود','rep.type':'نوع التقرير',
+  'q.today':'اليوم','q.yesterday':'أمس','q.week':'هذا الأسبوع','q.month':'هذا الشهر','q.all':'الكل',
+  'm.both':'التفاصيل + الملخص','m.details':'التفاصيل','m.summary':'الملخص','btn.print':'طباعة التقرير',
+  'rep.titleOrders':'تقرير زمن الطلبات','rep.titleFuel':'تقرير الوقود','rep.employee':'الموظف','rep.period':'الفترة','rep.printed':'تاريخ الطباعة',
+  'rep.details':'التفاصيل حسب التاريخ','rep.summary':'الملخص حسب التاريخ','rep.vehicleSummary':'الملخص حسب المركبة',
+  'rep.noData':'لا توجد سجلات في هذه الفترة. غيّر التواريخ أعلاه أو أضف سجلات من التبويبات الأخرى.',
+  'rep.totalOrders':'إجمالي الطلبات','rep.totalTime':'إجمالي الوقت','rep.average':'المتوسط',
+  'rep.totalDays':'الإجمالي (الأيام: {n})','rep.countOrders':'الطلبات: {n}','rep.countFills':'التعبئات: {n}',
+  'rep.fastest':'الأسرع','rep.slowest':'الأبطأ',
+  'rep.totalFills':'إجمالي التعبئات','rep.totalLiters':'إجمالي اللترات','rep.totalDistance':'إجمالي المسافة','rep.avgKmpl':'متوسط كم/لتر','rep.totalCost':'إجمالي التكلفة',
+  'rep.sign1':'توقيع الموظف','rep.sign2':'توقيع المشرف',
+  'rep.pAll':'كل التواريخ','rep.pFrom':'من {a}','rep.pUpTo':'حتى {a}','rep.pRange':'{a} إلى {b}',
+  'w.nothingTitle':'لا يوجد ما يُطبع','w.nothingText':'لا توجد سجلات في هذه الفترة.',
+  'w.empTitle':'اسم الموظف','w.empText':'يظهر الاسم في رأس التقرير.','w.empPh':'أدخل اسم الموظف','w.empPrint':'طباعة','w.empBad':'أدخل اسماً لطباعة التقرير.',
+  'v.none':'بدون رقم مركبة'
+},
+bn: {
+  'app.sub':'অর্ডার ও জ্বালানি ট্র্যাকার','tab.orders':'অর্ডার','tab.fuel':'জ্বালানি','tab.report':'রিপোর্ট',
+  'emp.ph':'কর্মীর নাম','lang':'ভাষা',
+  'f.date':'তারিখ','f.auto':'স্বয়ংক্রিয়','f.orderId':'অর্ডার আইডি','f.orderIdPh':'যেমন KT-2054','f.accept':'অর্ডার গ্রহণ','f.delivery':'ডেলিভারি','f.now':'এখন','f.nowTip':'বর্তমান সময় ব্যবহার করুন','f.take':'সময় লেগেছে','f.nextDay':'পরের দিন','f.a2d':'গ্রহণ থেকে ডেলিভারি',
+  'ord.new':'নতুন অর্ডার','ord.edit':'অর্ডার সম্পাদনা','edit.note':'বিদ্যমান এন্ট্রি সম্পাদনা হচ্ছে। হালনাগাদ করতে সংরক্ষণ করুন, বাতিল করতে বাতিল চাপুন।',
+  'btn.save':'অর্ডার সংরক্ষণ','btn.update':'অর্ডার হালনাগাদ','btn.clear':'মুছুন','btn.cancelEdit':'সম্পাদনা বাতিল',
+  'ord.title':'অর্ডার','n.saved':'{n}টি সংরক্ষিত',
+  'tbl.search':'অনুসন্ধান','tbl.orderSearchPh':'অর্ডার আইডি বা তারিখ','tbl.from':'থেকে','tbl.to':'পর্যন্ত','tbl.rows':'সারি','tbl.clearFilters':'ফিল্টার মুছুন','tbl.deleteAll':'সব মুছুন',
+  'col.sl':'ক্র.','col.date':'তারিখ','col.orderId':'অর্ডার আইডি','col.accept':'গ্রহণ','col.delivery':'ডেলিভারি','col.take':'সময় লেগেছে','col.actions':'কাজ',
+  'tbl.noMatch':'এই ফিল্টারে কোনো এন্ট্রি মেলেনি।',
+  'st.orders':'অর্ডার','st.totalTime':'মোট সময়','st.average':'গড়',
+  'pg.range':'{c}-এর মধ্যে {a}–{b}','pg.page':'পৃষ্ঠা {c} / {p}','pg.prev':'আগের পৃষ্ঠা','pg.next':'পরের পৃষ্ঠা',
+  'act.edit':'সম্পাদনা','act.delete':'মুছুন','aria.editOrder':'অর্ডার {id} সম্পাদনা','aria.delOrder':'অর্ডার {id} মুছুন',
+  'empty.orders':'এখনও কোনো অর্ডার নেই। উপরে প্রথম অর্ডার যোগ করুন, অথবা নমুনা ডেটা দিয়ে চালিয়ে দেখুন।','btn.sample':'নমুনা অর্ডার লোড করুন',
+  'w.missingTitle':'তথ্য অসম্পূর্ণ','w.missingOrder':'অর্ডার আইডি, গ্রহণের সময় ও ডেলিভারির সময় দিন।',
+  'w.dupTitle':'ডুপ্লিকেট অর্ডার','w.dupOrder':'অর্ডার {id} ইতিমধ্যে {date} তারিখে নথিভুক্ত।',
+  'w.wrapTitle':'ডেলিভারি গ্রহণের আগে','w.wrapText':'ডেলিভারি কি পরের দিন (মধ্যরাতের পর) ধরা হবে?','w.wrapYes':'হ্যাঁ, পরের দিন','w.wrapNo':'না, সময় ঠিক করব',
+  'w.delOrderTitle':'অর্ডার {id} মুছবেন?','w.keep':'রাখুন','w.delete':'মুছুন','w.cancel':'বাতিল',
+  'w.delAllTitle':'সব {what} মুছবেন?','w.delAllText':'এই ব্রাউজার থেকে সংরক্ষিত {n}টি এন্ট্রি সব মুছে যাবে। ফেরানো যাবে না।','w.delAllYes':'সব মুছুন',
+  'x.orders':'অর্ডার','x.fuel':'জ্বালানি এন্ট্রি',
+  'toast.orderSaved':'অর্ডার {id} সংরক্ষিত','toast.updated':'এন্ট্রি হালনাগাদ হয়েছে','toast.deleted':'এন্ট্রি মুছেছে','toast.allDeleted':'সব মুছে ফেলা হয়েছে','toast.sample':'নমুনা এন্ট্রি যোগ হয়েছে',
+  'u.min':'মি.','u.h':'ঘ.','u.m':'মি.','u.km':'কিমি','u.l':'লি.','u.kmpl':'কিমি/লি.',
+  'fuel.new':'নতুন জ্বালানি এন্ট্রি','fuel.edit':'জ্বালানি এন্ট্রি সম্পাদনা',
+  'f.time':'সময়','f.vehicle':'গাড়ি','f.optional':'ঐচ্ছিক','f.vehiclePh':'প্লেট বা আইডি','f.odo':'মিটার (কিমি)','f.odoPh':'যেমন 0166626','f.liters':'লিটার','f.litersPh':'যেমন 2.18','f.price':'প্রতি লিটার দাম ({cur})','f.pricePh':'যেমন 2.18',
+  'f.distance':'দূরত্ব','f.kmpl':'মাইলেজ','f.cost':'খরচ',
+  'fuel.prevNote':'আগের রিডিং: {odo} কিমি','fuel.firstNote':'এই গাড়ির প্রথম রিডিং',
+  'fuel.hint':'দূরত্ব = এই মিটার রিডিং − একই গাড়ির আগের রিডিং। মাইলেজ = সেই দূরত্ব ÷ এই বারের লিটার (সঠিক ফল পেতে প্রতিবার ট্যাংক ভরুন)।',
+  'fuel.save':'জ্বালানি এন্ট্রি সংরক্ষণ','fuel.update':'জ্বালানি এন্ট্রি হালনাগাদ','fuel.title':'জ্বালানি এন্ট্রি',
+  'fuel.allVehicles':'সব গাড়ি','fuel.searchPh':'গাড়ি বা মিটার',
+  'col.time':'সময়','col.vehicle':'গাড়ি','col.odo':'মিটার','col.distance':'দূরত্ব (কিমি)','col.liters':'লিটার','col.price':'দাম/লি.','col.cost':'খরচ ({cur})','col.kmpl':'কিমি/লি.',
+  'col.orders':'অর্ডার','col.fills':'ভরা',
+  'st.fills':'বার','st.liters':'লিটার','st.distance':'দূরত্ব','st.kmpl':'গড় কিমি/লি.','st.cost':'খরচ',
+  'empty.fuel':'এখনও কোনো জ্বালানি এন্ট্রি নেই। উপরে প্রথমটি যোগ করুন, অথবা নমুনা ডেটা দিয়ে চালিয়ে দেখুন।','btn.sampleFuel':'নমুনা জ্বালানি এন্ট্রি লোড করুন',
+  'w.fuelMissing':'তারিখ, সময়, মিটার রিডিং ও লিটার দিন।',
+  'w.odoBad':'মিটার রিডিং শুধু অঙ্ক হতে হবে, যেমন 0166626।','w.litersBad':'লিটার শূন্যের বেশি সংখ্যা হতে হবে, যেমন 2.18।','w.priceBad':'প্রতি লিটার দাম শূন্যের বেশি সংখ্যা হতে হবে।',
+  'w.odoDup':'এই গাড়ির জন্য এই মিটার রিডিং আগেই নথিভুক্ত।',
+  'w.odoLowTitle':'রিডিং আগেরটির চেয়ে কম','w.odoLowText':'আগের রিডিং {prev} কিমি, আপনি দিয়েছেন {odo} কিমি। তবু সংরক্ষণ করবেন?','w.odoLowYes':'তবু সংরক্ষণ করুন','w.odoLowNo':'রিডিং দেখি',
+  'w.delFuelTitle':'এই জ্বালানি এন্ট্রি মুছবেন?','toast.fuelSaved':'জ্বালানি এন্ট্রি সংরক্ষিত',
+  'aria.editEntry':'এন্ট্রি সম্পাদনা','aria.delEntry':'এন্ট্রি মুছুন',
+  'rep.typeOrders':'অর্ডার রিপোর্ট','rep.typeFuel':'জ্বালানি রিপোর্ট','rep.type':'রিপোর্টের ধরন',
+  'q.today':'আজ','q.yesterday':'গতকাল','q.week':'এই সপ্তাহ','q.month':'এই মাস','q.all':'সব',
+  'm.both':'বিবরণ + সারসংক্ষেপ','m.details':'বিবরণ','m.summary':'সারসংক্ষেপ','btn.print':'রিপোর্ট প্রিন্ট',
+  'rep.titleOrders':'অর্ডার সময় রিপোর্ট','rep.titleFuel':'জ্বালানি রিপোর্ট','rep.employee':'কর্মী','rep.period':'সময়কাল','rep.printed':'প্রিন্টের সময়',
+  'rep.details':'তারিখভিত্তিক বিবরণ','rep.summary':'তারিখভিত্তিক সারসংক্ষেপ','rep.vehicleSummary':'গাড়িভিত্তিক সারসংক্ষেপ',
+  'rep.noData':'এই সময়ে কোনো এন্ট্রি নেই। উপরের তারিখ বদলান অথবা অন্য ট্যাবে এন্ট্রি যোগ করুন।',
+  'rep.totalOrders':'মোট অর্ডার','rep.totalTime':'মোট সময়','rep.average':'গড়',
+  'rep.totalDays':'মোট (দিন: {n})','rep.countOrders':'অর্ডার: {n}','rep.countFills':'বার: {n}',
+  'rep.fastest':'দ্রুততম','rep.slowest':'ধীরতম',
+  'rep.totalFills':'মোট বার','rep.totalLiters':'মোট লিটার','rep.totalDistance':'মোট দূরত্ব','rep.avgKmpl':'গড় কিমি/লি.','rep.totalCost':'মোট খরচ',
+  'rep.sign1':'কর্মীর স্বাক্ষর','rep.sign2':'তত্ত্বাবধায়কের স্বাক্ষর',
+  'rep.pAll':'সব তারিখ','rep.pFrom':'{a} থেকে','rep.pUpTo':'{a} পর্যন্ত','rep.pRange':'{a} থেকে {b}',
+  'w.nothingTitle':'প্রিন্ট করার কিছু নেই','w.nothingText':'এই সময়ে কোনো এন্ট্রি নেই।',
+  'w.empTitle':'কর্মীর নাম','w.empText':'নামটি রিপোর্টের হেডারে দেখাবে।','w.empPh':'কর্মীর নাম লিখুন','w.empPrint':'প্রিন্ট','w.empBad':'রিপোর্ট প্রিন্টের জন্য একটি নাম দিন।',
+  'v.none':'গাড়ির আইডি নেই'
+},
+ur: {
+  'app.sub':'آرڈر اور ایندھن ٹریکر','tab.orders':'آرڈرز','tab.fuel':'ایندھن','tab.report':'رپورٹ',
+  'emp.ph':'ملازم کا نام','lang':'زبان',
+  'f.date':'تاریخ','f.auto':'خودکار','f.orderId':'آرڈر آئی ڈی','f.orderIdPh':'مثلاً KT-2054','f.accept':'آرڈر قبول','f.delivery':'ڈیلیوری','f.now':'ابھی','f.nowTip':'موجودہ وقت ڈالیں','f.take':'لگا وقت','f.nextDay':'اگلا دن','f.a2d':'قبولیت سے ڈیلیوری تک',
+  'ord.new':'نیا آرڈر','ord.edit':'آرڈر میں ترمیم','edit.note':'موجودہ اندراج میں ترمیم ہو رہی ہے۔ اپ ڈیٹ کے لیے محفوظ کریں یا تبدیلیاں چھوڑنے کے لیے منسوخ کریں۔',
+  'btn.save':'آرڈر محفوظ کریں','btn.update':'آرڈر اپ ڈیٹ کریں','btn.clear':'صاف کریں','btn.cancelEdit':'ترمیم منسوخ کریں',
+  'ord.title':'آرڈرز','n.saved':'{n} محفوظ',
+  'tbl.search':'تلاش','tbl.orderSearchPh':'آرڈر آئی ڈی یا تاریخ','tbl.from':'از','tbl.to':'تا','tbl.rows':'قطاریں','tbl.clearFilters':'فلٹر ہٹائیں','tbl.deleteAll':'سب حذف کریں',
+  'col.sl':'نمبر','col.date':'تاریخ','col.orderId':'آرڈر آئی ڈی','col.accept':'قبولیت','col.delivery':'ڈیلیوری','col.take':'لگا وقت','col.actions':'عمل',
+  'tbl.noMatch':'ان فلٹرز سے کوئی اندراج نہیں ملا۔',
+  'st.orders':'آرڈرز','st.totalTime':'کل وقت','st.average':'اوسط',
+  'pg.range':'{c} میں سے {a}–{b}','pg.page':'صفحہ {c} / {p}','pg.prev':'پچھلا صفحہ','pg.next':'اگلا صفحہ',
+  'act.edit':'ترمیم','act.delete':'حذف','aria.editOrder':'آرڈر {id} میں ترمیم','aria.delOrder':'آرڈر {id} حذف کریں',
+  'empty.orders':'ابھی کوئی آرڈر نہیں۔ اوپر پہلا آرڈر شامل کریں یا نمونہ ڈیٹا سے آزمائیں۔','btn.sample':'نمونہ آرڈرز لوڈ کریں',
+  'w.missingTitle':'معلومات ادھوری ہیں','w.missingOrder':'آرڈر آئی ڈی، قبولیت کا وقت اور ڈیلیوری کا وقت درج کریں۔',
+  'w.dupTitle':'دہرا آرڈر','w.dupOrder':'آرڈر {id} پہلے سے {date} کو درج ہے۔',
+  'w.wrapTitle':'ڈیلیوری قبولیت سے پہلے ہے','w.wrapText':'کیا ڈیلیوری اگلے دن (آدھی رات کے بعد) شمار کی جائے؟','w.wrapYes':'ہاں، اگلا دن','w.wrapNo':'نہیں، وقت درست کروں گا',
+  'w.delOrderTitle':'آرڈر {id} حذف کریں؟','w.keep':'رہنے دیں','w.delete':'حذف کریں','w.cancel':'منسوخ',
+  'w.delAllTitle':'تمام {what} حذف کریں؟','w.delAllText':'اس براؤزر سے محفوظ شدہ تمام {n} اندراجات ہٹ جائیں گے۔ اسے واپس نہیں کیا جا سکتا۔','w.delAllYes':'سب حذف کریں',
+  'x.orders':'آرڈرز','x.fuel':'ایندھن کے اندراجات',
+  'toast.orderSaved':'آرڈر {id} محفوظ ہو گیا','toast.updated':'اندراج اپ ڈیٹ ہو گیا','toast.deleted':'اندراج حذف ہو گیا','toast.allDeleted':'سب کچھ حذف ہو گیا','toast.sample':'نمونہ اندراجات شامل ہو گئے',
+  'u.min':'منٹ','u.h':'گھ','u.m':'من','u.km':'کلومیٹر','u.l':'لیٹر','u.kmpl':'کلومیٹر/لیٹر',
+  'fuel.new':'ایندھن کا نیا اندراج','fuel.edit':'ایندھن کے اندراج میں ترمیم',
+  'f.time':'وقت','f.vehicle':'گاڑی','f.optional':'اختیاری','f.vehiclePh':'پلیٹ یا آئی ڈی','f.odo':'میٹر (کلومیٹر)','f.odoPh':'مثلاً 0166626','f.liters':'لیٹر','f.litersPh':'مثلاً 2.18','f.price':'فی لیٹر قیمت ({cur})','f.pricePh':'مثلاً 2.18',
+  'f.distance':'فاصلہ','f.kmpl':'مائلیج','f.cost':'لاگت',
+  'fuel.prevNote':'پچھلی ریڈنگ: {odo} کلومیٹر','fuel.firstNote':'اس گاڑی کی پہلی ریڈنگ',
+  'fuel.hint':'فاصلہ = موجودہ میٹر ریڈنگ − اسی گاڑی کی پچھلی ریڈنگ۔ مائلیج = وہ فاصلہ ÷ اس بار کے لیٹر (درست نتیجے کے لیے ہر بار ٹینک بھریں)۔',
+  'fuel.save':'ایندھن کا اندراج محفوظ کریں','fuel.update':'ایندھن کا اندراج اپ ڈیٹ کریں','fuel.title':'ایندھن کے اندراجات',
+  'fuel.allVehicles':'تمام گاڑیاں','fuel.searchPh':'گاڑی یا میٹر',
+  'col.time':'وقت','col.vehicle':'گاڑی','col.odo':'میٹر','col.distance':'فاصلہ (کلومیٹر)','col.liters':'لیٹر','col.price':'قیمت/لیٹر','col.cost':'لاگت ({cur})','col.kmpl':'کلومیٹر/لیٹر',
+  'col.orders':'آرڈرز','col.fills':'فلنگ',
+  'st.fills':'فلنگ','st.liters':'لیٹر','st.distance':'فاصلہ','st.kmpl':'اوسط کلومیٹر/لیٹر','st.cost':'لاگت',
+  'empty.fuel':'ابھی ایندھن کا کوئی اندراج نہیں۔ اوپر پہلا شامل کریں یا نمونہ ڈیٹا سے آزمائیں۔','btn.sampleFuel':'نمونہ ایندھن اندراجات لوڈ کریں',
+  'w.fuelMissing':'تاریخ، وقت، میٹر ریڈنگ اور لیٹر درج کریں۔',
+  'w.odoBad':'میٹر ریڈنگ صرف اعداد میں ہونی چاہیے، مثلاً 0166626۔','w.litersBad':'لیٹر صفر سے زیادہ عدد ہونا چاہیے، مثلاً 2.18۔','w.priceBad':'فی لیٹر قیمت صفر سے زیادہ عدد ہونی چاہیے۔',
+  'w.odoDup':'اس گاڑی کے لیے یہ میٹر ریڈنگ پہلے سے درج ہے۔',
+  'w.odoLowTitle':'ریڈنگ پچھلی سے کم ہے','w.odoLowText':'پچھلی ریڈنگ {prev} کلومیٹر ہے اور آپ نے {odo} کلومیٹر درج کی۔ پھر بھی محفوظ کریں؟','w.odoLowYes':'پھر بھی محفوظ کریں','w.odoLowNo':'ریڈنگ دیکھتا ہوں',
+  'w.delFuelTitle':'یہ ایندھن کا اندراج حذف کریں؟','toast.fuelSaved':'ایندھن کا اندراج محفوظ ہو گیا',
+  'aria.editEntry':'اندراج میں ترمیم','aria.delEntry':'اندراج حذف کریں',
+  'rep.typeOrders':'آرڈر رپورٹ','rep.typeFuel':'ایندھن رپورٹ','rep.type':'رپورٹ کی قسم',
+  'q.today':'آج','q.yesterday':'کل','q.week':'اس ہفتے','q.month':'اس مہینے','q.all':'سب',
+  'm.both':'تفصیل + خلاصہ','m.details':'تفصیل','m.summary':'خلاصہ','btn.print':'رپورٹ پرنٹ کریں',
+  'rep.titleOrders':'آرڈر ٹائم رپورٹ','rep.titleFuel':'ایندھن رپورٹ','rep.employee':'ملازم','rep.period':'مدت','rep.printed':'پرنٹ کا وقت',
+  'rep.details':'تاریخ وار تفصیل','rep.summary':'تاریخ وار خلاصہ','rep.vehicleSummary':'گاڑی وار خلاصہ',
+  'rep.noData':'اس مدت میں کوئی اندراج نہیں۔ اوپر کی تاریخیں بدلیں یا دوسرے ٹیب میں اندراجات شامل کریں۔',
+  'rep.totalOrders':'کل آرڈرز','rep.totalTime':'کل وقت','rep.average':'اوسط',
+  'rep.totalDays':'کل (دن: {n})','rep.countOrders':'آرڈرز: {n}','rep.countFills':'فلنگ: {n}',
+  'rep.fastest':'سب سے تیز','rep.slowest':'سب سے سست',
+  'rep.totalFills':'کل فلنگ','rep.totalLiters':'کل لیٹر','rep.totalDistance':'کل فاصلہ','rep.avgKmpl':'اوسط کلومیٹر/لیٹر','rep.totalCost':'کل لاگت',
+  'rep.sign1':'ملازم کے دستخط','rep.sign2':'نگران کے دستخط',
+  'rep.pAll':'تمام تاریخیں','rep.pFrom':'{a} سے','rep.pUpTo':'{a} تک','rep.pRange':'{a} سے {b}',
+  'w.nothingTitle':'پرنٹ کرنے کو کچھ نہیں','w.nothingText':'اس مدت میں کوئی اندراج نہیں۔',
+  'w.empTitle':'ملازم کا نام','w.empText':'نام رپورٹ کے ہیڈر میں دکھایا جائے گا۔','w.empPh':'ملازم کا نام لکھیں','w.empPrint':'پرنٹ','w.empBad':'رپورٹ پرنٹ کرنے کے لیے نام لکھیں۔',
+  'v.none':'گاڑی آئی ڈی نہیں'
+}
+};
+
+/* ---------- v2 strings: login, roles, SOP, modals, employees, settings ---------- */
+const I18N_ADD = {
+en: {
+  'btn.saveGeneric':'Save','set.dataTitle':'Backup and restore',
+  'login.title':'Sign in','login.sub':'Use the account your supervisor created for you.','login.user':'Username','login.userPh':'Enter your username','login.pass':'Password','login.passPh':'Enter your password','login.show':'Show password','login.hide':'Hide password','login.keep':'Keep me signed in','login.btn':'Sign in','login.bad':'Wrong username or password.','login.inactive':'This account is inactive. Ask your administrator.','login.first':'First time? Sign in as admin with password admin123, then change the password from the key icon.','login.sopTitle':'How a delivery shift works','login.sopSub':'Follow these steps on every shift.','login.roles':'Who can do what','login.tag':'Delivery order and fuel tracking',
+  'sop.title':'Standard operating procedure','sop.who':'Roles',
+  'sop.1.t':'Sign in','sop.1.d':'Use your own username. Never share your password.',
+  'sop.2.t':'Accept the order','sop.2.d':'Tap Add order. Type the order number and the accept time.',
+  'sop.3.t':'Deliver','sop.3.d':'Enter the delivery time. The take time is calculated for you.',
+  'sop.4.t':'Refuel','sop.4.d':'Tap Add fuel. Enter the meter KM and the amount you paid. Liters are calculated at the set price.',
+  'sop.5.t':'Supervisor review','sop.5.d':'Supervisors check the entries, correct mistakes and review each employee.',
+  'sop.6.t':'Report and print','sop.6.d':'Open Report, choose the dates and the employee, then print.',
+  'role.admin':'Admin','role.supervisor':'Supervisor','role.user':'User',
+  'role.admin.d':'Manages employees, fuel price and all records.','role.supervisor.d':'Checks, corrects and reports on all records.','role.user.d':'Adds own orders and fuel and prints own report.',
+  'nav.sop':'SOP','nav.password':'Change password','nav.logout':'Sign out','tab.employees':'Employees',
+  'btn.add':'Add','btn.close':'Close','btn.saveNext':'Save and add next',
+  'ord.add':'Add order','fuel.add':'Add fuel',
+  'f.employee':'Employee','f.pickEmp':'Select employee','f.allEmp':'All employees','f.plate':'Vehicle plate','f.noPlate':'No plate set','f.amount':'Fuel amount ({cur})','f.amountPh':'e.g. 24','f.priceL':'Price per liter','f.litersAuto':'Liters (auto)',
+  'col.employee':'Employee','col.plate':'Plate','col.amount':'Amount ({cur})',
+  'w.pickEmp':'Select an employee first.','w.orderNoBad':'Order number must be digits only.','w.amountBad':'Fuel amount must be a number above zero.','w.noPrice':'The fuel price per liter is not set. Ask an administrator to set it in Employees.','w.overAllow':'This fill brings {name} to {used} of {limit} {cur} this month. Save anyway?','w.noPlateFuel':'This employee has no vehicle plate. An administrator must add it in Employees first.','w.overYes':'Save anyway',
+  'emp.title':'Employees','emp.add':'Add employee','emp.edit':'Edit employee','emp.no':'Emp No','emp.name':'Full name','emp.iqama':'Iqama No','emp.iqamaExp':'Iqama expiry','emp.nation':'Nationality','emp.phone':'Phone','emp.plate':'Vehicle plate','emp.vtype':'Vehicle type','emp.allow':'Monthly fuel limit ({cur})','emp.allowHint':'0 means no limit','emp.role':'Role','emp.username':'Username','emp.password':'Password','emp.passKeep':'Leave empty to keep the current password','emp.status':'Status','emp.active':'Active','emp.inactive':'Inactive','emp.joined':'Joined','emp.fuelMonth':'Fuel this month','emp.expired':'Expired','emp.soon':'{n} days left','emp.valid':'Valid','emp.bike':'Motorcycle','emp.car':'Car','emp.van':'Van','emp.searchPh':'Name, Iqama, plate or username','emp.sec1':'Personal','emp.sec2':'Vehicle and fuel','emp.sec3':'Login',
+  'w.empName':'Enter the full name.','w.iqamaBad':'Iqama number must be 10 digits.','w.iqamaDup':'This Iqama number is already registered.','w.userBad':'Username needs 3 to 20 letters or digits, without spaces.','w.userDup':'This username is already taken.','w.passBad':'Password needs at least 6 characters.','w.selfDel':'You cannot delete your own account.','w.lastAdmin':'At least one active admin is required.','w.delEmpTitle':'Delete {name}?','w.delEmpText':'Their orders and fuel entries stay in the records.','toast.empSaved':'Employee saved','toast.empDeleted':'Employee deleted',
+  'set.title':'Fuel price and data','set.price':'Fuel price per liter ({cur})','set.priceHelp':'Turns the amount paid into liters for every new fuel entry. Saved entries keep the price they were made with.','set.save':'Save price','toast.priceSaved':'Fuel price saved','set.backup':'Download backup','set.restore':'Restore backup','set.dataHelp':'Everything is stored in this browser. Download a backup regularly.','w.restoreTitle':'Restore this backup?','w.restoreText':'This replaces all data in this browser with the backup file.','w.restoreYes':'Restore','w.restoreBad':'This file is not a valid backup.','toast.restored':'Backup restored',
+  'pw.title':'Change password','pw.old':'Current password','pw.new':'New password','pw.confirm':'Confirm new password','pw.save':'Update password','pw.mismatch':'The new passwords do not match.','pw.wrongOld':'The current password is wrong.','toast.pwSaved':'Password updated','pw.defTitle':'Default password in use','pw.defText':'Change the admin password now so nobody else can sign in as admin.','pw.later':'Later',
+  'rep.employeeFilter':'Employee','rep.plate':'Vehicle plate','rep.iqama':'Iqama No','rep.empSummary':'Employee-wise summary','rep.allEmp':'All employees',
+  'f.odo':'Meter KM','col.odo':'Meter KM','f.orderId':'Order No','col.orderId':'Order No','f.orderIdPh':'e.g. 20458',
+  'empty.orders':'No orders yet. Tap Add order to record the first one.','empty.fuel':'No fuel entries yet. Tap Add fuel to record the first one.'
+},
+ar: {
+  'btn.saveGeneric':'حفظ','set.dataTitle':'النسخ الاحتياطي والاستعادة',
+  'login.title':'تسجيل الدخول','login.sub':'استخدم الحساب الذي أنشأه لك المشرف.','login.user':'اسم المستخدم','login.userPh':'أدخل اسم المستخدم','login.pass':'كلمة المرور','login.passPh':'أدخل كلمة المرور','login.show':'إظهار كلمة المرور','login.hide':'إخفاء كلمة المرور','login.keep':'ابقني مسجلاً','login.btn':'دخول','login.bad':'اسم المستخدم أو كلمة المرور غير صحيحة.','login.inactive':'هذا الحساب غير نشط. راجع المسؤول.','login.first':'أول مرة؟ ادخل باسم admin وكلمة المرور admin123 ثم غيّر كلمة المرور من أيقونة المفتاح.','login.sopTitle':'كيف تسير وردية التوصيل','login.sopSub':'اتبع هذه الخطوات في كل وردية.','login.roles':'من يستطيع فعل ماذا','login.tag':'تتبع طلبات التوصيل والوقود',
+  'sop.title':'إجراءات التشغيل القياسية','sop.who':'الصلاحيات',
+  'sop.1.t':'تسجيل الدخول','sop.1.d':'استخدم اسم المستخدم الخاص بك. لا تشارك كلمة المرور أبداً.',
+  'sop.2.t':'قبول الطلب','sop.2.d':'اضغط إضافة طلب، ثم اكتب رقم الطلب ووقت القبول.',
+  'sop.3.t':'التسليم','sop.3.d':'أدخل وقت التسليم. يُحسب زمن التوصيل تلقائياً.',
+  'sop.4.t':'التزود بالوقود','sop.4.d':'اضغط إضافة وقود، ثم أدخل قراءة العداد بالكم والمبلغ المدفوع. تُحسب اللترات حسب السعر المحدد.',
+  'sop.5.t':'مراجعة المشرف','sop.5.d':'يراجع المشرفون السجلات ويصححون الأخطاء ويتابعون كل موظف.',
+  'sop.6.t':'التقرير والطباعة','sop.6.d':'افتح التقرير، اختر التواريخ والموظف ثم اطبع.',
+  'role.admin':'مدير النظام','role.supervisor':'مشرف','role.user':'مستخدم',
+  'role.admin.d':'يدير الموظفين وسعر الوقود وكل السجلات.','role.supervisor.d':'يراجع ويصحح ويصدر تقارير لكل السجلات.','role.user.d':'يضيف طلباته ووقوده ويطبع تقريره.',
+  'nav.sop':'الإجراءات','nav.password':'تغيير كلمة المرور','nav.logout':'تسجيل الخروج','tab.employees':'الموظفون',
+  'btn.add':'إضافة','btn.close':'إغلاق','btn.saveNext':'حفظ وإضافة التالي',
+  'ord.add':'إضافة طلب','fuel.add':'إضافة وقود',
+  'f.employee':'الموظف','f.pickEmp':'اختر الموظف','f.allEmp':'كل الموظفين','f.plate':'لوحة المركبة','f.noPlate':'لا توجد لوحة','f.amount':'مبلغ الوقود ({cur})','f.amountPh':'مثال: 24','f.priceL':'سعر اللتر','f.litersAuto':'اللترات (تلقائي)',
+  'col.employee':'الموظف','col.plate':'اللوحة','col.amount':'المبلغ ({cur})',
+  'w.pickEmp':'اختر الموظف أولاً.','w.orderNoBad':'رقم الطلب أرقام فقط.','w.amountBad':'مبلغ الوقود رقم أكبر من صفر.','w.noPrice':'سعر اللتر غير محدد. اطلب من المدير تحديده في الموظفون.','w.overAllow':'هذه التعبئة تجعل {name} عند {used} من {limit} {cur} هذا الشهر. هل تحفظ على أي حال؟','w.noPlateFuel':'هذا الموظف بلا لوحة مركبة. على المدير إضافتها أولاً من الموظفون.','w.overYes':'احفظ على أي حال',
+  'emp.title':'الموظفون','emp.add':'إضافة موظف','emp.edit':'تعديل موظف','emp.no':'رقم الموظف','emp.name':'الاسم الكامل','emp.iqama':'رقم الإقامة','emp.iqamaExp':'انتهاء الإقامة','emp.nation':'الجنسية','emp.phone':'الجوال','emp.plate':'لوحة المركبة','emp.vtype':'نوع المركبة','emp.allow':'حد الوقود الشهري ({cur})','emp.allowHint':'0 يعني بلا حد','emp.role':'الدور','emp.username':'اسم المستخدم','emp.password':'كلمة المرور','emp.passKeep':'اتركها فارغة للإبقاء على كلمة المرور الحالية','emp.status':'الحالة','emp.active':'نشط','emp.inactive':'غير نشط','emp.joined':'تاريخ الانضمام','emp.fuelMonth':'وقود هذا الشهر','emp.expired':'منتهية','emp.soon':'باقي {n} يوماً','emp.valid':'سارية','emp.bike':'دراجة نارية','emp.car':'سيارة','emp.van':'فان','emp.searchPh':'الاسم أو الإقامة أو اللوحة أو المستخدم','emp.sec1':'البيانات الشخصية','emp.sec2':'المركبة والوقود','emp.sec3':'الدخول',
+  'w.empName':'أدخل الاسم الكامل.','w.iqamaBad':'رقم الإقامة 10 أرقام.','w.iqamaDup':'رقم الإقامة مسجل بالفعل.','w.userBad':'اسم المستخدم من 3 إلى 20 حرفاً أو رقماً بدون مسافات.','w.userDup':'اسم المستخدم مستخدم بالفعل.','w.passBad':'كلمة المرور 6 أحرف على الأقل.','w.selfDel':'لا يمكنك حذف حسابك.','w.lastAdmin':'يلزم وجود مدير نشط واحد على الأقل.','w.delEmpTitle':'حذف {name}؟','w.delEmpText':'تبقى طلباته وسجلات وقوده في السجلات.','toast.empSaved':'تم حفظ الموظف','toast.empDeleted':'تم حذف الموظف',
+  'set.title':'سعر الوقود والبيانات','set.price':'سعر اللتر ({cur})','set.priceHelp':'يحوّل المبلغ المدفوع إلى لترات لكل تعبئة جديدة. تحتفظ السجلات المحفوظة بسعرها.','set.save':'حفظ السعر','toast.priceSaved':'تم حفظ سعر الوقود','set.backup':'تنزيل نسخة احتياطية','set.restore':'استعادة نسخة احتياطية','set.dataHelp':'كل البيانات محفوظة في هذا المتصفح. نزّل نسخة احتياطية بانتظام.','w.restoreTitle':'استعادة هذه النسخة؟','w.restoreText':'سيتم استبدال كل بيانات هذا المتصفح بملف النسخة.','w.restoreYes':'استعادة','w.restoreBad':'هذا الملف ليس نسخة احتياطية صالحة.','toast.restored':'تمت الاستعادة',
+  'pw.title':'تغيير كلمة المرور','pw.old':'كلمة المرور الحالية','pw.new':'كلمة المرور الجديدة','pw.confirm':'تأكيد كلمة المرور الجديدة','pw.save':'تحديث كلمة المرور','pw.mismatch':'كلمتا المرور الجديدتان غير متطابقتين.','pw.wrongOld':'كلمة المرور الحالية خاطئة.','toast.pwSaved':'تم تحديث كلمة المرور','pw.defTitle':'كلمة المرور الافتراضية قيد الاستخدام','pw.defText':'غيّر كلمة مرور المدير الآن حتى لا يتمكن أحد من الدخول كمدير.','pw.later':'لاحقاً',
+  'rep.employeeFilter':'الموظف','rep.plate':'لوحة المركبة','rep.iqama':'رقم الإقامة','rep.empSummary':'الملخص حسب الموظف','rep.allEmp':'كل الموظفين',
+  'f.orderIdPh':'مثال: 20458',
+  'empty.orders':'لا توجد طلبات بعد. اضغط إضافة طلب لتسجيل أول طلب.','empty.fuel':'لا توجد سجلات وقود بعد. اضغط إضافة وقود لتسجيل أول سجل.'
+},
+ur: {
+  'btn.saveGeneric':'محفوظ کریں','set.dataTitle':'بیک اپ اور بحالی',
+  'login.title':'لاگ اِن','login.sub':'وہ اکاؤنٹ استعمال کریں جو آپ کے سپروائزر نے بنایا ہے۔','login.user':'صارف نام','login.userPh':'اپنا صارف نام لکھیں','login.pass':'پاس ورڈ','login.passPh':'اپنا پاس ورڈ لکھیں','login.show':'پاس ورڈ دکھائیں','login.hide':'پاس ورڈ چھپائیں','login.keep':'مجھے لاگ اِن رکھیں','login.btn':'لاگ اِن کریں','login.bad':'صارف نام یا پاس ورڈ غلط ہے۔','login.inactive':'یہ اکاؤنٹ غیر فعال ہے۔ ایڈمن سے رابطہ کریں۔','login.first':'پہلی بار؟ admin اور پاس ورڈ admin123 سے لاگ اِن کریں، پھر چابی کے آئیکن سے پاس ورڈ بدلیں۔','login.sopTitle':'ڈیلیوری شفٹ کیسے چلتی ہے','login.sopSub':'ہر شفٹ میں یہ مراحل اپنائیں۔','login.roles':'کون کیا کر سکتا ہے','login.tag':'ڈیلیوری آرڈر اور ایندھن کی ٹریکنگ',
+  'sop.title':'معیاری طریقۂ کار','sop.who':'کردار',
+  'sop.1.t':'لاگ اِن','sop.1.d':'اپنا صارف نام استعمال کریں۔ پاس ورڈ کسی کو نہ بتائیں۔',
+  'sop.2.t':'آرڈر قبول کریں','sop.2.d':'آرڈر شامل کریں دبائیں، پھر آرڈر نمبر اور قبولیت کا وقت لکھیں۔',
+  'sop.3.t':'ڈیلیور کریں','sop.3.d':'ڈیلیوری کا وقت لکھیں۔ لگا وقت خود بخود نکل آتا ہے۔',
+  'sop.4.t':'ایندھن ڈالیں','sop.4.d':'ایندھن شامل کریں دبائیں، پھر میٹر کلومیٹر اور ادا کی گئی رقم لکھیں۔ لیٹر مقررہ قیمت پر خود نکلتے ہیں۔',
+  'sop.5.t':'سپروائزر کا جائزہ','sop.5.d':'سپروائزر اندراجات دیکھتے ہیں، غلطیاں درست کرتے ہیں اور ہر ملازم کا جائزہ لیتے ہیں۔',
+  'sop.6.t':'رپورٹ اور پرنٹ','sop.6.d':'رپورٹ کھولیں، تاریخیں اور ملازم چنیں، پھر پرنٹ کریں۔',
+  'role.admin':'ایڈمن','role.supervisor':'سپروائزر','role.user':'صارف',
+  'role.admin.d':'ملازمین، ایندھن کی قیمت اور تمام ریکارڈ سنبھالتا ہے۔','role.supervisor.d':'تمام ریکارڈ دیکھتا، درست کرتا اور رپورٹ بناتا ہے۔','role.user.d':'اپنے آرڈر اور ایندھن شامل کرتا اور اپنی رپورٹ پرنٹ کرتا ہے۔',
+  'nav.sop':'طریقۂ کار','nav.password':'پاس ورڈ بدلیں','nav.logout':'لاگ آؤٹ','tab.employees':'ملازمین',
+  'btn.add':'شامل کریں','btn.close':'بند کریں','btn.saveNext':'محفوظ کریں اور اگلا شامل کریں',
+  'ord.add':'آرڈر شامل کریں','fuel.add':'ایندھن شامل کریں',
+  'f.employee':'ملازم','f.pickEmp':'ملازم چنیں','f.allEmp':'تمام ملازمین','f.plate':'گاڑی کی پلیٹ','f.noPlate':'پلیٹ درج نہیں','f.amount':'ایندھن کی رقم ({cur})','f.amountPh':'مثلاً 24','f.priceL':'فی لیٹر قیمت','f.litersAuto':'لیٹر (خودکار)',
+  'col.employee':'ملازم','col.plate':'پلیٹ','col.amount':'رقم ({cur})',
+  'w.pickEmp':'پہلے ملازم چنیں۔','w.orderNoBad':'آرڈر نمبر صرف اعداد میں ہونا چاہیے۔','w.amountBad':'ایندھن کی رقم صفر سے زیادہ عدد ہونی چاہیے۔','w.noPrice':'فی لیٹر قیمت مقرر نہیں۔ ایڈمن سے ملازمین ٹیب میں مقرر کروائیں۔','w.overAllow':'اس فلنگ سے {name} اس مہینے {limit} {cur} میں سے {used} پر پہنچ جائیں گے۔ پھر بھی محفوظ کریں؟','w.noPlateFuel':'اس ملازم کی گاڑی کی پلیٹ درج نہیں۔ ایڈمن کو پہلے ملازمین میں شامل کرنی ہوگی۔','w.overYes':'پھر بھی محفوظ کریں',
+  'emp.title':'ملازمین','emp.add':'ملازم شامل کریں','emp.edit':'ملازم میں ترمیم','emp.no':'ملازم نمبر','emp.name':'پورا نام','emp.iqama':'اقامہ نمبر','emp.iqamaExp':'اقامہ کی میعاد','emp.nation':'قومیت','emp.phone':'فون','emp.plate':'گاڑی کی پلیٹ','emp.vtype':'گاڑی کی قسم','emp.allow':'ماہانہ ایندھن حد ({cur})','emp.allowHint':'0 کا مطلب کوئی حد نہیں','emp.role':'کردار','emp.username':'صارف نام','emp.password':'پاس ورڈ','emp.passKeep':'موجودہ پاس ورڈ رکھنے کے لیے خالی چھوڑیں','emp.status':'حالت','emp.active':'فعال','emp.inactive':'غیر فعال','emp.joined':'شمولیت','emp.fuelMonth':'اس مہینے کا ایندھن','emp.expired':'ختم','emp.soon':'{n} دن باقی','emp.valid':'درست','emp.bike':'موٹر سائیکل','emp.car':'کار','emp.van':'وین','emp.searchPh':'نام، اقامہ، پلیٹ یا صارف نام','emp.sec1':'ذاتی معلومات','emp.sec2':'گاڑی اور ایندھن','emp.sec3':'لاگ اِن',
+  'w.empName':'پورا نام لکھیں۔','w.iqamaBad':'اقامہ نمبر 10 ہندسوں کا ہونا چاہیے۔','w.iqamaDup':'یہ اقامہ نمبر پہلے سے درج ہے۔','w.userBad':'صارف نام 3 سے 20 حروف یا اعداد کا ہو، خالی جگہ کے بغیر۔','w.userDup':'یہ صارف نام پہلے سے لیا جا چکا ہے۔','w.passBad':'پاس ورڈ کم از کم 6 حروف کا ہو۔','w.selfDel':'آپ اپنا اکاؤنٹ حذف نہیں کر سکتے۔','w.lastAdmin':'کم از کم ایک فعال ایڈمن ضروری ہے۔','w.delEmpTitle':'{name} کو حذف کریں؟','w.delEmpText':'ان کے آرڈرز اور ایندھن کے اندراجات ریکارڈ میں رہیں گے۔','toast.empSaved':'ملازم محفوظ ہو گیا','toast.empDeleted':'ملازم حذف ہو گیا',
+  'set.title':'ایندھن کی قیمت اور ڈیٹا','set.price':'فی لیٹر قیمت ({cur})','set.priceHelp':'ادا کی گئی رقم کو ہر نئے اندراج میں لیٹر میں بدلتی ہے۔ محفوظ اندراجات اپنی پرانی قیمت رکھتے ہیں۔','set.save':'قیمت محفوظ کریں','toast.priceSaved':'ایندھن کی قیمت محفوظ ہو گئی','set.backup':'بیک اپ ڈاؤن لوڈ کریں','set.restore':'بیک اپ بحال کریں','set.dataHelp':'تمام ڈیٹا اسی براؤزر میں محفوظ ہے۔ باقاعدگی سے بیک اپ ڈاؤن لوڈ کریں۔','w.restoreTitle':'یہ بیک اپ بحال کریں؟','w.restoreText':'اس براؤزر کا تمام ڈیٹا بیک اپ فائل سے بدل جائے گا۔','w.restoreYes':'بحال کریں','w.restoreBad':'یہ فائل درست بیک اپ نہیں ہے۔','toast.restored':'بیک اپ بحال ہو گیا',
+  'pw.title':'پاس ورڈ بدلیں','pw.old':'موجودہ پاس ورڈ','pw.new':'نیا پاس ورڈ','pw.confirm':'نئے پاس ورڈ کی تصدیق','pw.save':'پاس ورڈ اپ ڈیٹ کریں','pw.mismatch':'نئے پاس ورڈ آپس میں نہیں ملتے۔','pw.wrongOld':'موجودہ پاس ورڈ غلط ہے۔','toast.pwSaved':'پاس ورڈ اپ ڈیٹ ہو گیا','pw.defTitle':'ڈیفالٹ پاس ورڈ استعمال میں ہے','pw.defText':'ایڈمن کا پاس ورڈ ابھی بدلیں تاکہ کوئی اور ایڈمن بن کر لاگ اِن نہ کر سکے۔','pw.later':'بعد میں',
+  'rep.employeeFilter':'ملازم','rep.plate':'گاڑی کی پلیٹ','rep.iqama':'اقامہ نمبر','rep.empSummary':'ملازم وار خلاصہ','rep.allEmp':'تمام ملازمین',
+  'f.orderId':'آرڈر نمبر','col.orderId':'آرڈر نمبر','f.orderIdPh':'مثلاً 20458',
+  'empty.orders':'ابھی کوئی آرڈر نہیں۔ پہلا آرڈر درج کرنے کے لیے آرڈر شامل کریں دبائیں۔','empty.fuel':'ابھی ایندھن کا کوئی اندراج نہیں۔ پہلا اندراج درج کرنے کے لیے ایندھن شامل کریں دبائیں۔'
+},
+bn: {
+  'btn.saveGeneric':'সংরক্ষণ','set.dataTitle':'ব্যাকআপ ও পুনরুদ্ধার',
+  'login.title':'সাইন ইন','login.sub':'আপনার সুপারভাইজারের তৈরি করা অ্যাকাউন্ট ব্যবহার করুন।','login.user':'ইউজারনেম','login.userPh':'আপনার ইউজারনেম লিখুন','login.pass':'পাসওয়ার্ড','login.passPh':'আপনার পাসওয়ার্ড লিখুন','login.show':'পাসওয়ার্ড দেখান','login.hide':'পাসওয়ার্ড লুকান','login.keep':'আমাকে সাইন ইন রাখুন','login.btn':'সাইন ইন করুন','login.bad':'ইউজারনেম বা পাসওয়ার্ড ভুল।','login.inactive':'এই অ্যাকাউন্ট নিষ্ক্রিয়। অ্যাডমিনের সাথে যোগাযোগ করুন।','login.first':'প্রথমবার? admin ও পাসওয়ার্ড admin123 দিয়ে সাইন ইন করুন, তারপর চাবির আইকন থেকে পাসওয়ার্ড বদলান।','login.sopTitle':'ডেলিভারি শিফট যেভাবে চলে','login.sopSub':'প্রতিটি শিফটে এই ধাপগুলো মেনে চলুন।','login.roles':'কে কী করতে পারে','login.tag':'ডেলিভারি অর্ডার ও জ্বালানি ট্র্যাকিং',
+  'sop.title':'আদর্শ কার্যপদ্ধতি','sop.who':'ভূমিকা',
+  'sop.1.t':'সাইন ইন','sop.1.d':'নিজের ইউজারনেম ব্যবহার করুন। পাসওয়ার্ড কাউকে দেবেন না।',
+  'sop.2.t':'অর্ডার গ্রহণ','sop.2.d':'অর্ডার যোগ চাপুন, তারপর অর্ডার নম্বর ও গ্রহণের সময় লিখুন।',
+  'sop.3.t':'ডেলিভারি','sop.3.d':'ডেলিভারির সময় লিখুন। সময় লেগেছে নিজে থেকেই হিসাব হয়।',
+  'sop.4.t':'জ্বালানি নেওয়া','sop.4.d':'জ্বালানি যোগ চাপুন, তারপর মিটার কিমি ও পরিশোধিত টাকা লিখুন। নির্ধারিত দামে লিটার নিজে থেকে হিসাব হয়।',
+  'sop.5.t':'সুপারভাইজার পর্যালোচনা','sop.5.d':'সুপারভাইজাররা এন্ট্রি দেখেন, ভুল ঠিক করেন এবং প্রতিটি কর্মীকে পর্যালোচনা করেন।',
+  'sop.6.t':'রিপোর্ট ও প্রিন্ট','sop.6.d':'রিপোর্ট খুলে তারিখ ও কর্মী বেছে নিন, তারপর প্রিন্ট করুন।',
+  'role.admin':'অ্যাডমিন','role.supervisor':'সুপারভাইজার','role.user':'ইউজার',
+  'role.admin.d':'কর্মী, জ্বালানির দাম ও সব রেকর্ড পরিচালনা করে।','role.supervisor.d':'সব রেকর্ড দেখে, ঠিক করে ও রিপোর্ট করে।','role.user.d':'নিজের অর্ডার ও জ্বালানি যোগ করে এবং নিজের রিপোর্ট প্রিন্ট করে।',
+  'nav.sop':'নিয়মাবলি','nav.password':'পাসওয়ার্ড বদলান','nav.logout':'সাইন আউট','tab.employees':'কর্মী',
+  'btn.add':'যোগ করুন','btn.close':'বন্ধ','btn.saveNext':'সংরক্ষণ করে পরেরটি যোগ করুন',
+  'ord.add':'অর্ডার যোগ','fuel.add':'জ্বালানি যোগ',
+  'f.employee':'কর্মী','f.pickEmp':'কর্মী বাছুন','f.allEmp':'সব কর্মী','f.plate':'গাড়ির প্লেট','f.noPlate':'প্লেট নেই','f.amount':'জ্বালানির টাকা ({cur})','f.amountPh':'যেমন 24','f.priceL':'প্রতি লিটার দাম','f.litersAuto':'লিটার (স্বয়ংক্রিয়)',
+  'col.employee':'কর্মী','col.plate':'প্লেট','col.amount':'টাকা ({cur})',
+  'w.pickEmp':'আগে একজন কর্মী বাছুন।','w.orderNoBad':'অর্ডার নম্বর শুধু অঙ্ক হতে হবে।','w.amountBad':'জ্বালানির টাকা শূন্যের বেশি সংখ্যা হতে হবে।','w.noPrice':'প্রতি লিটার দাম নির্ধারিত নেই। অ্যাডমিনকে কর্মী ট্যাবে দাম দিতে বলুন।','w.overAllow':'এই ভরায় {name} এই মাসে {limit} {cur}-এর মধ্যে {used} হবে। তবু সংরক্ষণ করবেন?','w.noPlateFuel':'এই কর্মীর গাড়ির প্লেট নেই। আগে অ্যাডমিনকে কর্মী ট্যাবে যোগ করতে হবে।','w.overYes':'তবু সংরক্ষণ করুন',
+  'emp.title':'কর্মী','emp.add':'কর্মী যোগ','emp.edit':'কর্মী সম্পাদনা','emp.no':'কর্মী নম্বর','emp.name':'পূর্ণ নাম','emp.iqama':'ইকামা নম্বর','emp.iqamaExp':'ইকামার মেয়াদ','emp.nation':'জাতীয়তা','emp.phone':'ফোন','emp.plate':'গাড়ির প্লেট','emp.vtype':'গাড়ির ধরন','emp.allow':'মাসিক জ্বালানি সীমা ({cur})','emp.allowHint':'0 মানে কোনো সীমা নেই','emp.role':'ভূমিকা','emp.username':'ইউজারনেম','emp.password':'পাসওয়ার্ড','emp.passKeep':'বর্তমান পাসওয়ার্ড রাখতে ফাঁকা রাখুন','emp.status':'অবস্থা','emp.active':'সক্রিয়','emp.inactive':'নিষ্ক্রিয়','emp.joined':'যোগদান','emp.fuelMonth':'এই মাসের জ্বালানি','emp.expired':'মেয়াদোত্তীর্ণ','emp.soon':'{n} দিন বাকি','emp.valid':'বৈধ','emp.bike':'মোটরসাইকেল','emp.car':'গাড়ি','emp.van':'ভ্যান','emp.searchPh':'নাম, ইকামা, প্লেট বা ইউজারনেম','emp.sec1':'ব্যক্তিগত তথ্য','emp.sec2':'গাড়ি ও জ্বালানি','emp.sec3':'লগইন',
+  'w.empName':'পূর্ণ নাম লিখুন।','w.iqamaBad':'ইকামা নম্বর 10 অঙ্কের হতে হবে।','w.iqamaDup':'এই ইকামা নম্বর আগেই নিবন্ধিত।','w.userBad':'ইউজারনেম 3 থেকে 20টি অক্ষর বা অঙ্কের, ফাঁকা ছাড়া।','w.userDup':'এই ইউজারনেম আগেই নেওয়া হয়েছে।','w.passBad':'পাসওয়ার্ড কমপক্ষে 6 অক্ষরের হতে হবে।','w.selfDel':'আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।','w.lastAdmin':'কমপক্ষে একজন সক্রিয় অ্যাডমিন থাকতে হবে।','w.delEmpTitle':'{name} কে মুছবেন?','w.delEmpText':'তাঁর অর্ডার ও জ্বালানি এন্ট্রি রেকর্ডে থাকবে।','toast.empSaved':'কর্মী সংরক্ষিত','toast.empDeleted':'কর্মী মুছেছে',
+  'set.title':'জ্বালানির দাম ও ডেটা','set.price':'প্রতি লিটার দাম ({cur})','set.priceHelp':'প্রতিটি নতুন এন্ট্রিতে পরিশোধিত টাকাকে লিটারে রূপান্তর করে। সংরক্ষিত এন্ট্রি আগের দামই রাখে।','set.save':'দাম সংরক্ষণ','toast.priceSaved':'জ্বালানির দাম সংরক্ষিত','set.backup':'ব্যাকআপ ডাউনলোড','set.restore':'ব্যাকআপ পুনরুদ্ধার','set.dataHelp':'সব ডেটা এই ব্রাউজারে সংরক্ষিত। নিয়মিত ব্যাকআপ ডাউনলোড করুন।','w.restoreTitle':'এই ব্যাকআপ পুনরুদ্ধার করবেন?','w.restoreText':'এই ব্রাউজারের সব ডেটা ব্যাকআপ ফাইল দিয়ে বদলে যাবে।','w.restoreYes':'পুনরুদ্ধার','w.restoreBad':'এই ফাইলটি বৈধ ব্যাকআপ নয়।','toast.restored':'ব্যাকআপ পুনরুদ্ধার হয়েছে',
+  'pw.title':'পাসওয়ার্ড বদলান','pw.old':'বর্তমান পাসওয়ার্ড','pw.new':'নতুন পাসওয়ার্ড','pw.confirm':'নতুন পাসওয়ার্ড নিশ্চিত করুন','pw.save':'পাসওয়ার্ড হালনাগাদ','pw.mismatch':'নতুন পাসওয়ার্ড দুটি মেলেনি।','pw.wrongOld':'বর্তমান পাসওয়ার্ড ভুল।','toast.pwSaved':'পাসওয়ার্ড হালনাগাদ হয়েছে','pw.defTitle':'ডিফল্ট পাসওয়ার্ড ব্যবহার হচ্ছে','pw.defText':'এখনই অ্যাডমিনের পাসওয়ার্ড বদলান, যাতে অন্য কেউ অ্যাডমিন হয়ে সাইন ইন করতে না পারে।','pw.later':'পরে',
+  'rep.employeeFilter':'কর্মী','rep.plate':'গাড়ির প্লেট','rep.iqama':'ইকামা নম্বর','rep.empSummary':'কর্মীভিত্তিক সারসংক্ষেপ','rep.allEmp':'সব কর্মী',
+  'f.orderId':'অর্ডার নম্বর','col.orderId':'অর্ডার নম্বর','f.orderIdPh':'যেমন 20458',
+  'empty.orders':'এখনও কোনো অর্ডার নেই। প্রথম অর্ডার রেকর্ড করতে অর্ডার যোগ চাপুন।','empty.fuel':'এখনও কোনো জ্বালানি এন্ট্রি নেই। প্রথমটি রেকর্ড করতে জ্বালানি যোগ চাপুন।'
+}
+};
+const I18N_SCAN = {
+en: {
+  'nav.scan':'Scan','nav.more':'More','scan.title':'Scan a picture','scan.kindOrder':'Order screenshot','scan.kindFuel':'Fuel receipt or meter','scan.take':'Take photo','scan.choose':'Choose image','scan.hint':'Take a photo or pick a screenshot. The AI reads it and fills the form for you to check.','scan.reading':'Reading the picture…','scan.again':'Read again','scan.review':'Filled from the picture. Check every field, then save.','scan.nothing':'The AI could not find these details in the picture. Try a clearer image.','scan.noKey':'Add your AI key first.','scan.ai':'AI settings','scan.provider':'Provider','scan.gemini':'Google Gemini','scan.openai':'OpenAI (ChatGPT)','scan.key':'API key','scan.model':'Model','scan.saveAI':'Save settings','scan.aiSaved':'AI settings saved','scan.privacy':'The picture is sent to the provider you choose. The key stays in this browser only.','scan.errKey':'The AI service rejected the request. Check the key and model.','scan.errNet':'Could not reach the AI service. Check the internet connection.','scan.errQuota':'The AI service is busy or the quota is used up. Try again later.','scan.errParse':'The AI answer could not be read. Try again.','scan.errImage':'This image could not be opened.'
+},
+ar: {
+  'nav.scan':'مسح','nav.more':'المزيد','scan.title':'مسح صورة','scan.kindOrder':'لقطة شاشة الطلب','scan.kindFuel':'إيصال وقود أو عداد','scan.take':'التقاط صورة','scan.choose':'اختيار صورة','scan.hint':'التقط صورة أو اختر لقطة شاشة. يقرأها الذكاء الاصطناعي ويملأ النموذج لتراجعه.','scan.reading':'جارٍ قراءة الصورة…','scan.again':'اقرأ مرة أخرى','scan.review':'تمت التعبئة من الصورة. راجع كل حقل ثم احفظ.','scan.nothing':'لم يجد الذكاء الاصطناعي هذه البيانات في الصورة. جرّب صورة أوضح.','scan.noKey':'أضف مفتاح الذكاء الاصطناعي أولاً.','scan.ai':'إعدادات الذكاء الاصطناعي','scan.provider':'المزوّد','scan.gemini':'Google Gemini','scan.openai':'OpenAI (ChatGPT)','scan.key':'مفتاح API','scan.model':'النموذج','scan.saveAI':'حفظ الإعدادات','scan.aiSaved':'تم حفظ الإعدادات','scan.privacy':'تُرسل الصورة إلى المزوّد الذي تختاره. يبقى المفتاح في هذا المتصفح فقط.','scan.errKey':'رفضت الخدمة الطلب. تحقق من المفتاح والنموذج.','scan.errNet':'تعذر الاتصال بخدمة الذكاء الاصطناعي. تحقق من الإنترنت.','scan.errQuota':'الخدمة مشغولة أو انتهت الحصة. حاول لاحقاً.','scan.errParse':'تعذرت قراءة إجابة الذكاء الاصطناعي. حاول مرة أخرى.','scan.errImage':'تعذر فتح هذه الصورة.'
+},
+ur: {
+  'nav.scan':'اسکین','nav.more':'مزید','scan.title':'تصویر اسکین کریں','scan.kindOrder':'آرڈر کا اسکرین شاٹ','scan.kindFuel':'ایندھن کی رسید یا میٹر','scan.take':'تصویر لیں','scan.choose':'تصویر چنیں','scan.hint':'تصویر لیں یا اسکرین شاٹ چنیں۔ اے آئی اسے پڑھ کر فارم بھر دیتا ہے، آپ بس جانچ لیں۔','scan.reading':'تصویر پڑھی جا رہی ہے…','scan.again':'دوبارہ پڑھیں','scan.review':'تصویر سے بھرا گیا ہے۔ ہر خانہ جانچیں، پھر محفوظ کریں۔','scan.nothing':'اے آئی کو تصویر میں یہ معلومات نہیں ملیں۔ زیادہ صاف تصویر آزمائیں۔','scan.noKey':'پہلے اے آئی کی کلید شامل کریں۔','scan.ai':'اے آئی سیٹنگز','scan.provider':'فراہم کنندہ','scan.gemini':'Google Gemini','scan.openai':'OpenAI (ChatGPT)','scan.key':'API کلید','scan.model':'ماڈل','scan.saveAI':'سیٹنگز محفوظ کریں','scan.aiSaved':'سیٹنگز محفوظ ہو گئیں','scan.privacy':'تصویر آپ کے منتخب کردہ فراہم کنندہ کو بھیجی جاتی ہے۔ کلید صرف اسی براؤزر میں رہتی ہے۔','scan.errKey':'اے آئی سروس نے درخواست قبول نہیں کی۔ کلید اور ماڈل جانچیں۔','scan.errNet':'اے آئی سروس تک رسائی نہیں ہو سکی۔ انٹرنیٹ جانچیں۔','scan.errQuota':'سروس مصروف ہے یا حد ختم ہو گئی ہے۔ بعد میں آزمائیں۔','scan.errParse':'اے آئی کا جواب پڑھا نہیں جا سکا۔ دوبارہ آزمائیں۔','scan.errImage':'یہ تصویر کھولی نہیں جا سکی۔'
+},
+bn: {
+  'nav.scan':'স্ক্যান','nav.more':'আরও','scan.title':'ছবি স্ক্যান করুন','scan.kindOrder':'অর্ডারের স্ক্রিনশট','scan.kindFuel':'জ্বালানির রসিদ বা মিটার','scan.take':'ছবি তুলুন','scan.choose':'ছবি বাছুন','scan.hint':'ছবি তুলুন বা স্ক্রিনশট বাছুন। এআই সেটি পড়ে ফর্ম ভরে দেবে, আপনি শুধু দেখে নিন।','scan.reading':'ছবি পড়া হচ্ছে…','scan.again':'আবার পড়ুন','scan.review':'ছবি থেকে ভরা হয়েছে। প্রতিটি ঘর দেখে নিয়ে সংরক্ষণ করুন।','scan.nothing':'এআই ছবিতে এই তথ্য খুঁজে পায়নি। আরও পরিষ্কার ছবি দিন।','scan.noKey':'আগে এআই কী যোগ করুন।','scan.ai':'এআই সেটিংস','scan.provider':'প্রদানকারী','scan.gemini':'Google Gemini','scan.openai':'OpenAI (ChatGPT)','scan.key':'API কী','scan.model':'মডেল','scan.saveAI':'সেটিংস সংরক্ষণ','scan.aiSaved':'সেটিংস সংরক্ষিত','scan.privacy':'ছবি আপনার বাছাই করা প্রদানকারীর কাছে পাঠানো হয়। কী শুধু এই ব্রাউজারে থাকে।','scan.errKey':'এআই সেবা অনুরোধ গ্রহণ করেনি। কী ও মডেল দেখুন।','scan.errNet':'এআই সেবায় পৌঁছানো যায়নি। ইন্টারনেট দেখুন।','scan.errQuota':'সেবা ব্যস্ত বা সীমা শেষ। পরে চেষ্টা করুন।','scan.errParse':'এআই-এর উত্তর পড়া যায়নি। আবার চেষ্টা করুন।','scan.errImage':'এই ছবি খোলা যায়নি।'
+}
+};
+Object.keys(I18N_ADD).forEach((l) => Object.assign(I18N[l], I18N_ADD[l], I18N_SCAN[l]));
+
+const I18N_AI = {
+en: {
+  'ai.title':'AI scan key','ai.help':'Save the key once. Every user then scans without typing it, and users cannot see it. It is stored in this browser and included in backups, so keep backup files private.','ai.on':'Key saved. Scanning is ready for all users on this device.','ai.off':'No key saved yet. Scanning is off.','ai.builtIn':'Using the key built into this file. Scanning is ready.','ai.clear':'Remove key','ai.cleared':'Key removed','ai.keyEmpty':'Enter the API key first.',
+  'scan.noKeyUser':'AI scanning is not set up yet. Ask the administrator.','scan.noKeyAdmin':'Add the AI key first in Employees > Settings.','scan.goSettings':'Open settings','scan.privacy':'The picture is sent to the AI provider chosen by the administrator.'
+},
+ar: {
+  'ai.title':'مفتاح مسح الذكاء الاصطناعي','ai.help':'احفظ المفتاح مرة واحدة ثم يستخدم الجميع المسح دون إدخاله، ولا يستطيع المستخدمون رؤيته. يُحفظ في هذا المتصفح ويدخل في النسخ الاحتياطية، فاحتفظ بها بسرية.','ai.on':'تم حفظ المفتاح. المسح جاهز لجميع المستخدمين على هذا الجهاز.','ai.off':'لا يوجد مفتاح محفوظ. المسح متوقف.','ai.builtIn':'يُستخدم المفتاح المدمج في هذا الملف. المسح جاهز.','ai.clear':'حذف المفتاح','ai.cleared':'تم حذف المفتاح','ai.keyEmpty':'أدخل مفتاح API أولاً.',
+  'scan.noKeyUser':'مسح الذكاء الاصطناعي غير مُعدّ بعد. اطلب من المدير.','scan.noKeyAdmin':'أضف مفتاح الذكاء الاصطناعي أولاً من الموظفون > الإعدادات.','scan.goSettings':'فتح الإعدادات','scan.privacy':'تُرسل الصورة إلى مزوّد الذكاء الاصطناعي الذي اختاره المدير.'
+},
+ur: {
+  'ai.title':'اے آئی اسکین کلید','ai.help':'کلید ایک بار محفوظ کریں۔ پھر سب صارفین بغیر لکھے اسکین کر سکتے ہیں اور اسے دیکھ نہیں سکتے۔ یہ اسی براؤزر میں محفوظ ہوتی ہے اور بیک اپ میں شامل ہوتی ہے، اس لیے بیک اپ فائلیں نجی رکھیں۔','ai.on':'کلید محفوظ ہو گئی۔ اس ڈیوائس پر سب صارفین کے لیے اسکین تیار ہے۔','ai.off':'ابھی کوئی کلید محفوظ نہیں۔ اسکین بند ہے۔','ai.builtIn':'اس فائل میں شامل کلید استعمال ہو رہی ہے۔ اسکین تیار ہے۔','ai.clear':'کلید ہٹائیں','ai.cleared':'کلید ہٹا دی گئی','ai.keyEmpty':'پہلے API کلید درج کریں۔',
+  'scan.noKeyUser':'اے آئی اسکین ابھی سیٹ نہیں ہے۔ ایڈمن سے کہیں۔','scan.noKeyAdmin':'پہلے ملازمین > سیٹنگز میں اے آئی کلید شامل کریں۔','scan.goSettings':'سیٹنگز کھولیں','scan.privacy':'تصویر اس اے آئی فراہم کنندہ کو بھیجی جاتی ہے جو ایڈمن نے چنا ہے۔'
+},
+bn: {
+  'ai.title':'এআই স্ক্যান কী','ai.help':'কী একবার সংরক্ষণ করুন। তারপর সবাই না লিখেই স্ক্যান করতে পারবে, আর ব্যবহারকারীরা এটি দেখতে পায় না। এটি এই ব্রাউজারে থাকে এবং ব্যাকআপে যুক্ত হয়, তাই ব্যাকআপ ফাইল গোপন রাখুন।','ai.on':'কী সংরক্ষিত। এই ডিভাইসে সবার জন্য স্ক্যান প্রস্তুত।','ai.off':'এখনো কোনো কী সংরক্ষিত নেই। স্ক্যান বন্ধ।','ai.builtIn':'এই ফাইলে বসানো কী ব্যবহার হচ্ছে। স্ক্যান প্রস্তুত।','ai.clear':'কী মুছুন','ai.cleared':'কী মুছে ফেলা হয়েছে','ai.keyEmpty':'আগে API কী লিখুন।',
+  'scan.noKeyUser':'এআই স্ক্যান এখনো চালু করা হয়নি। অ্যাডমিনকে বলুন।','scan.noKeyAdmin':'আগে কর্মী > সেটিংসে এআই কী যোগ করুন।','scan.goSettings':'সেটিংস খুলুন','scan.privacy':'ছবি অ্যাডমিনের বাছাই করা এআই প্রদানকারীর কাছে পাঠানো হয়।'
+}
+};
+Object.keys(I18N_AI).forEach((l) => Object.assign(I18N[l], I18N_AI[l]));
+
+const makeT = (code) => (key, vars) => {
+  const dict = I18N[code] || I18N.en;
+  let s = dict[key];
+  if (s === undefined) s = I18N.en[key];
+  if (s === undefined) s = key;
+  return s.replace(/\{(\w+)\}/g, (_, k) => (k === 'cur' ? CURRENCY : (vars && vars[k] !== undefined ? vars[k] : '')));
+};
+
+const LangCtx = React.createContext(null);
+const useI18n = () => useContext(LangCtx);
+
+/* ---------- date/time helpers (moment) ---------- */
+// Keep Latin digits in every language; only month/day names and AM/PM are translated.
+['ar-sa', 'bn', 'ur'].forEach((l) => moment.updateLocale(l, { postformat: (s) => s, preparse: (s) => s }));
+moment.locale('en');
+let MLOC = 'en';
+const DATE_FMT = 'YYYY-MM-DD';
+const mt = (s, f) => moment(s, f, 'en');                // parse (always English digits)
+const fm = (m, f) => m.locale(MLOC).format(f);          // format in the active language
+const today = () => moment().format(DATE_FMT);
+const nowTime = () => moment().format('HH:mm');
+const stamp = (date, time) => mt(`${date} ${time}`, `${DATE_FMT} HH:mm`);
+const isWrap = (date, accept, delivery) => stamp(date, delivery).isBefore(stamp(date, accept));
+const calcMinutes = (date, accept, delivery) => {
+  const a = stamp(date, accept);
+  const d = stamp(date, delivery);
+  if (d.isBefore(a)) d.add(1, 'day'); // delivered after midnight
+  return d.diff(a, 'minutes');
+};
+const fmtTime = (t) => fm(mt(t, 'HH:mm'), 'hh:mm A');
+const fmtDate = (d) => fm(mt(d, DATE_FMT), 'DD MMM YYYY');
+const fmtDay = (d) => fm(mt(d, DATE_FMT), 'dddd, DD MMM YYYY');
+const fmtShortDay = (d) => fm(mt(d, DATE_FMT), 'ddd, DD MMM YYYY');
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+const durFormatter = (t) => (m) => {
+  if (m === null || m === undefined || isNaN(m)) return '—';
+  const v = Math.round(m * 10) / 10;
+  const h = Math.floor(v / 60);
+  const mm = Math.round((v - h * 60) * 10) / 10;
+  return h > 0 ? `${h}${t('u.h')} ${mm}${t('u.m')}` : `${mm} ${t('u.min')}`;
+};
+
+/* ---------- order grouping ---------- */
+const groupByDate = (rows) => {
+  const map = {};
+  rows.forEach((r) => { (map[r.date] = map[r.date] || []).push(r); });
+  return Object.keys(map).sort().map((date) => {
+    const items = map[date].slice().sort((a, b) => a.accept.localeCompare(b.accept));
+    const mins = items.map((r) => r.minutes);
+    const total = mins.reduce((s, m) => s + m, 0);
+    return { date, items, count: items.length, total, avg: total / items.length, min: Math.min(...mins), max: Math.max(...mins) };
+  });
+};
+
+/* ---------- fuel maths ---------- */
+const vKey = (v) => (v || '').trim().toUpperCase();
+const odoNum = (e) => parseInt(e.odo, 10);
+const dtKey = (e) => `${e.date} ${e.time}`;
+
+// Adds distance since the previous reading of the same vehicle, mileage (km/L) and cost to every entry.
+const fuelStats = (entries) => {
+  const sorted = entries.slice().sort((a, b) => dtKey(a).localeCompare(dtKey(b)) || a.createdAt - b.createdAt);
+  const last = {};
+  return sorted.map((e) => {
+    const k = vKey(e.vehicle);
+    const odo = odoNum(e);
+    let distance = null, kmpl = null;
+    if (last[k] !== undefined) {
+      const d = odo - last[k];
+      if (d >= 0) { distance = d; if (e.liters > 0) kmpl = d / e.liters; }
+    }
+    last[k] = odo;
+    return { ...e, odoNum: odo, distance, kmpl, cost: e.amount !== undefined && e.amount !== null ? e.amount : (e.price > 0 ? e.liters * e.price : null) };
+  });
+};
+
+const findPrev = (entries, f, excludeId) => {
+  const k = vKey(f.vehicle);
+  const at = `${f.date} ${f.time}`;
+  let best = null;
+  entries.forEach((e) => {
+    if (e.id === excludeId || vKey(e.vehicle) !== k || dtKey(e) > at) return;
+    if (!best || dtKey(e).localeCompare(dtKey(best)) > 0 || (dtKey(e) === dtKey(best) && e.createdAt > best.createdAt)) best = e;
+  });
+  return best ? { ...best, odoNum: odoNum(best) } : null;
+};
+
+const aggFuel = (items) => {
+  let liters = 0, distance = 0, cost = 0, dv = 0, lv = 0;
+  items.forEach((e) => {
+    liters += e.liters;
+    if (e.distance !== null) distance += e.distance;
+    if (e.cost !== null) cost += e.cost;
+    if (e.kmpl !== null) { dv += e.distance; lv += e.liters; }
+  });
+  return { fills: items.length, liters, distance, cost, kmpl: lv ? dv / lv : null };
+};
+
+const groupFuelByDate = (rows) => {
+  const map = {};
+  rows.forEach((r) => { (map[r.date] = map[r.date] || []).push(r); });
+  return Object.keys(map).sort().map((date) => {
+    const items = map[date].slice().sort((a, b) => a.time.localeCompare(b.time) || a.createdAt - b.createdAt);
+    return { date, items, ...aggFuel(items) };
+  });
+};
+
+const n2 = (n) => (n === null || n === undefined || isNaN(n) ? '—' : (Math.round(n * 100) / 100).toFixed(2));
+const nKm = (n) => (n === null || n === undefined || isNaN(n) ? '—' : Math.round(n).toLocaleString('en-US'));
+
+/* ---------- small UI helpers ---------- */
+const Dlg = Swal.mixin({ confirmButtonColor: '#16181b', cancelButtonColor: '#6b7280' });
+const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2200, timerProgressBar: true });
+const Icon = ({ n }) => <i className={`fa-solid fa-${n}`} aria-hidden="true"></i>;
+
+function Logo({ className }) {
+  const [ok, setOk] = useState(true);
+  return ok
+    ? <div className="logo-tile"><img src={LOGO_URL} alt="RH logo" onError={() => setOk(false)} /></div>
+    : <div className="brand-mark"><Icon n="motorcycle" /></div>;
+}
+
+function Watermark() {
+  const [ok, setOk] = useState(true);
+  return ok ? <img className="watermark" src={LOGO_URL} alt="" aria-hidden="true" onError={() => setOk(false)} /> : null;
+}
+
+/* ---------- accounts, roles and sessions (stored in this browser only) ---------- */
+const LS_USERS = 'keeta_users_v1';
+const LS_SESSION = 'keeta_session_v1';
+const ROLES = ['admin', 'supervisor', 'user'];
+const ROLE_ICON = { admin: 'user-shield', supervisor: 'user-check', user: 'motorcycle' };
+const VTYPES = [['motorcycle', 'emp.bike'], ['car', 'emp.car'], ['van', 'emp.van']];
+const r2 = (n) => Math.round(n * 100) / 100;
+const entryAmount = (e) => (e.amount !== undefined && e.amount !== null ? e.amount : e.price > 0 ? r2(e.liters * e.price) : 0);
+
+const tinyHash = (text) => { let h = 5381; for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0; return 'x' + (h >>> 0).toString(16); };
+const sha = async (text) => {
+  try {
+    if (window.crypto && crypto.subtle) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (e) { /* use the fallback below */ }
+  return tinyHash(text);
+};
+const randSalt = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const hashPw = (pw, salt) => sha(`${salt}:${pw}`);
+const checkPw = async (pw, u) => {
+  const text = `${u.salt}:${pw}`;
+  return u.hash === (await sha(text)) || u.hash === tinyHash(text);
+};
+const readSession = () => { try { return sessionStorage.getItem(LS_SESSION) || localStorage.getItem(LS_SESSION) || null; } catch (e) { return null; } };
+const writeSession = (id, keep) => {
+  try {
+    sessionStorage.removeItem(LS_SESSION); localStorage.removeItem(LS_SESSION);
+    if (id) (keep ? localStorage : sessionStorage).setItem(LS_SESSION, id);
+  } catch (e) { /* storage blocked */ }
+};
+const nextEmpNo = (users) => 'EMP-' + String(users.reduce((m, u) => Math.max(m, parseInt(String(u.empNo).replace(/\D/g, ''), 10) || 0), 0) + 1).padStart(3, '0');
+const iqamaState = (exp, t) => {
+  if (!exp) return null;
+  const days = mt(exp, DATE_FMT).diff(mt(today(), DATE_FMT), 'days');
+  if (days < 0) return { cls: 'bad', text: t('emp.expired') };
+  if (days <= 30) return { cls: 'warn', text: t('emp.soon', { n: days }) };
+  return { cls: 'ok', text: t('emp.valid') };
+};
+
+/* ---------- shared UI pieces ---------- */
+const RoleBadge = ({ role }) => {
+  const { t } = useI18n();
+  return <span className={`badge ${role}`}><Icon n={ROLE_ICON[role]} /> {t('role.' + role)}</span>;
+};
+
+const SOP_ICONS = ['right-to-bracket', 'bag-shopping', 'truck-fast', 'gas-pump', 'clipboard-check', 'print'];
+function SopFlow({ light }) {
+  const { t } = useI18n();
+  return (
+    <ol className={`sop-steps${light ? ' sop-light' : ''}`}>
+      {SOP_ICONS.map((ic, i) => (
+        <li className="sop-step" key={i}>
+          <div className="sop-ico"><Icon n={ic} /><b>{i + 1}</b></div>
+          <div><h3>{t(`sop.${i + 1}.t`)}</h3><p>{t(`sop.${i + 1}.d`)}</p></div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function LangPick({ lang, setLang, light }) {
+  const { t } = useI18n();
+  const id = light ? 'lang-select-login' : 'lang-select';
+  return (
+    <label className={`pill${light ? ' light' : ''}`} htmlFor={id}>
+      <Icon n="globe" />
+      <select id={id} value={lang} onChange={(e) => setLang(e.target.value)} aria-label={t('lang')}>
+        {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function Modal({ title, icon, onClose, onSubmit, children, footer, wide }) {
+  const { t } = useI18n();
+  const ref = useRef(null);
+  useEffect(() => {
+    const prev = document.activeElement;
+    document.body.classList.add('modal-open');
+    const onKey = (e) => {
+      if (Swal.isVisible()) return;
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+      if (e.key === 'Tab' && ref.current) {
+        const els = ref.current.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled])');
+        if (!els.length) return;
+        const first = els[0], last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    const tm = setTimeout(() => {
+      const el = ref.current && (ref.current.querySelector('[data-autofocus]') || ref.current.querySelector('input:not([disabled]),select:not([disabled])'));
+      if (el) el.focus();
+    }, 40);
+    return () => { clearTimeout(tm); document.removeEventListener('keydown', onKey); document.body.classList.remove('modal-open'); if (prev && prev.focus) prev.focus(); };
+  }, []);
+  return (
+    <div className="modal-back no-print">
+      <form className={`modal${wide ? ' wide' : ''}`} ref={ref} role="dialog" aria-modal="true" aria-labelledby="modal-title" onSubmit={(e) => { e.preventDefault(); if (onSubmit) onSubmit(); }} noValidate>
+        <div className="modal-head">
+          <h2 id="modal-title">{icon && <Icon n={icon} />}{title}</h2>
+          <button type="button" className="icon-btn" aria-label={t('btn.close')} onClick={onClose}><Icon n="xmark" /></button>
+        </div>
+        <div className="modal-body">{children}</div>
+        <div className="modal-foot">{footer}</div>
+      </form>
+    </div>
+  );
+}
+
+const Field = ({ id, label, children, full, hint }) => (
+  <div className={`field${full ? ' full' : ''}`}>
+    <label htmlFor={id}>{label}</label>
+    {children}
+    {hint}
+  </div>
+);
+const af = (on) => (on ? { 'data-autofocus': '' } : {});
+
+/* ---------- generic datatable: search, date range, sort, pagination ---------- */
+function DataTable({ rows, columns, searchText, searchPh, defaultSort, dateFilter = true, renderStats, onDeleteAll }) {
+  const { t } = useI18n();
+  const [q, setQ] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [size, setSize] = useState(10);
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState(defaultSort || { key: columns[0].k, dir: 'desc' });
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const out = rows.filter((r) => (!s || searchText(r).toLowerCase().includes(s)) && (!dateFilter || ((!from || r.date >= from) && (!to || r.date <= to))));
+    out.sort((a, b) => {
+      const av = a[sort.key], bv = b[sort.key];
+      let c;
+      if ((av === null || av === undefined) && (bv === null || bv === undefined)) c = 0;
+      else if (av === null || av === undefined) c = -1;
+      else if (bv === null || bv === undefined) c = 1;
+      else if (typeof av === 'number' && typeof bv === 'number') c = av - bv;
+      else c = String(av).localeCompare(String(bv), undefined, { numeric: true });
+      if (c === 0) c = (a.createdAt || 0) - (b.createdAt || 0);
+      return sort.dir === 'asc' ? c : -c;
+    });
+    return out;
+  }, [rows, q, from, to, sort]);
+
+  useEffect(() => { setPage(1); }, [q, from, to, size]);
+  const pages = Math.max(1, Math.ceil(filtered.length / size));
+  const cur = Math.min(page, pages);
+  const start = (cur - 1) * size;
+  const view = filtered.slice(start, start + size);
+  const filtersOn = q || from || to;
+  const sortBy = (k) => setSort((s) => ({ key: k, dir: s.key === k && s.dir === 'asc' ? 'desc' : 'asc' }));
+
+  return (
+    <>
+      <div className="toolbar">
+        <div className="field grow">
+          <label htmlFor="dt-q">{t('tbl.search')}</label>
+          <div className="searchbox"><Icon n="magnifying-glass" /><input id="dt-q" className="input" type="search" placeholder={searchPh} value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        </div>
+        {dateFilter && (
+          <>
+            <div className="field"><label htmlFor="dt-from">{t('tbl.from')}</label><input id="dt-from" className="input" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+            <div className="field"><label htmlFor="dt-to">{t('tbl.to')}</label><input id="dt-to" className="input" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          </>
+        )}
+        <div className="field">
+          <label htmlFor="dt-size">{t('tbl.rows')}</label>
+          <select id="dt-size" className="input" value={size} onChange={(e) => setSize(Number(e.target.value))}>
+            {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        {filtersOn && <button type="button" className="btn btn-quiet" onClick={() => { setQ(''); setFrom(''); setTo(''); }}><Icon n="circle-xmark" /> {t('tbl.clearFilters')}</button>}
+        {onDeleteAll && <button type="button" className="btn btn-quiet" onClick={onDeleteAll}><Icon n="trash-can" /> {t('tbl.deleteAll')}</button>}
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{t('col.sl')}</th>
+              {columns.map((c) => (c.sortable === false
+                ? <th key={c.k} className={c.cls}>{c.label}</th>
+                : (
+                  <th key={c.k} className={c.cls} aria-sort={sort.key === c.k ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <button type="button" className={`th-btn${sort.key === c.k ? ' on' : ''}`} onClick={() => sortBy(c.k)}>
+                      {c.label}<Icon n={sort.key === c.k ? (sort.dir === 'asc' ? 'sort-up' : 'sort-down') : 'sort'} />
+                    </button>
+                  </th>
+                )))}
+            </tr>
+          </thead>
+          <tbody>
+            {view.length === 0 && <tr><td colSpan={columns.length + 1} style={{ textAlign: 'center', color: 'var(--muted)', padding: 28 }}>{t('tbl.noMatch')}</td></tr>}
+            {view.map((r, i) => (
+              <tr key={r.id}>
+                <td className="num">{start + i + 1}</td>
+                {columns.map((c) => <td key={c.k} className={c.cls}>{c.cell(r)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="tfoot-bar">
+        {renderStats ? renderStats(filtered) : <div />}
+        <div className="pager">
+          <span className="num">{filtered.length ? t('pg.range', { a: start + 1, b: Math.min(start + size, filtered.length), c: filtered.length }) : '0'}</span>
+          <button type="button" className="icon-btn" aria-label={t('pg.prev')} disabled={cur <= 1} onClick={() => setPage(cur - 1)}><Icon n="chevron-left" /></button>
+          <span className="num">{t('pg.page', { c: cur, p: pages })}</span>
+          <button type="button" className="icon-btn" aria-label={t('pg.next')} disabled={cur >= pages} onClick={() => setPage(cur + 1)}><Icon n="chevron-right" /></button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const Stat = ({ label, value }) => <span>{label} <b>{value}</b></span>;
+const RowActions = ({ onEdit, onDelete, editLabel, delLabel }) => (
+  <div className="actions">
+    <button type="button" className="icon-btn" aria-label={editLabel} title={editLabel} onClick={onEdit}><Icon n="pen" /></button>
+    <button type="button" className="icon-btn del" aria-label={delLabel} title={delLabel} onClick={onDelete}><Icon n="trash-can" /></button>
+  </div>
+);
+
+async function confirmDelete(t, title, text) {
+  const r = await Dlg.fire({ icon: 'warning', title, text, showCancelButton: true, confirmButtonColor: '#bf3a2b', confirmButtonText: t('w.delete'), cancelButtonText: t('w.keep') });
+  return r.isConfirmed;
+}
+async function confirmDeleteAll(t, what, n) {
+  const r = await Dlg.fire({ icon: 'warning', title: t('w.delAllTitle', { what }), text: t('w.delAllText', { n }), showCancelButton: true, confirmButtonColor: '#bf3a2b', confirmButtonText: t('w.delAllYes'), cancelButtonText: t('w.cancel') });
+  return r.isConfirmed;
+}
+
+/* ---------- order modal ---------- */
+function OrderModal({ editing, prefill, orders, users, me, lastEmp, onSave, onClose }) {
+  const { t, dur } = useI18n();
+  const isStaff = me.role !== 'user';
+  const legacy = !!editing && !/^\d+$/.test(editing.orderId);
+  const emps = users.filter((u) => u.active || (editing && u.id === editing.employeeId));
+  const [f, setF] = useState(() => (editing
+    ? { employeeId: editing.employeeId || '', date: editing.date, orderNo: editing.orderId, accept: editing.accept, delivery: editing.delivery }
+    : { employeeId: isStaff ? lastEmp || '' : me.id, date: (prefill && prefill.date) || today(), orderNo: (prefill && prefill.orderNo) || '', accept: (prefill && prefill.accept) || '', delivery: (prefill && prefill.delivery) || '' }));
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const setNo = (e) => setF((p) => ({ ...p, orderNo: legacy ? e.target.value : e.target.value.replace(/\D/g, '').slice(0, 12) }));
+  const now = (k) => () => setF((p) => ({ ...p, [k]: nowTime() }));
+
+  const preview = useMemo(() => (f.date && f.accept && f.delivery
+    ? { minutes: calcMinutes(f.date, f.accept, f.delivery), wraps: isWrap(f.date, f.accept, f.delivery) } : null), [f.date, f.accept, f.delivery]);
+
+  async function submit(addNext) {
+    const orderNo = f.orderNo.trim();
+    if (!f.employeeId) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.pickEmp') }); return; }
+    if (!f.date || !orderNo || !f.accept || !f.delivery) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.missingOrder') }); return; }
+    if (!legacy && !/^\d{1,12}$/.test(orderNo)) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.orderNoBad') }); return; }
+    const dup = orders.some((o) => (!editing || o.id !== editing.id) && o.date === f.date && String(o.orderId).toLowerCase() === orderNo.toLowerCase());
+    if (dup) { Dlg.fire({ icon: 'error', title: t('w.dupTitle'), text: t('w.dupOrder', { id: orderNo, date: fmtDate(f.date) }) }); return; }
+    if (isWrap(f.date, f.accept, f.delivery)) {
+      const r = await Dlg.fire({ icon: 'question', title: t('w.wrapTitle'), text: t('w.wrapText'), showCancelButton: true, confirmButtonText: t('w.wrapYes'), cancelButtonText: t('w.wrapNo') });
+      if (!r.isConfirmed) return;
+    }
+    onSave({ employeeId: f.employeeId, date: f.date, orderId: orderNo, accept: f.accept, delivery: f.delivery, minutes: calcMinutes(f.date, f.accept, f.delivery) }, editing ? editing.id : null);
+    if (addNext) setF((p) => ({ ...p, orderNo: '', accept: '', delivery: '' }));
+    else onClose();
+  }
+
+  return (
+    <Modal title={editing ? t('ord.edit') : t('ord.add')} icon="bag-shopping" onClose={onClose} onSubmit={() => submit(false)}
+      footer={(
+        <>
+          <button type="button" className="btn btn-quiet" onClick={onClose}>{t('w.cancel')}</button>
+          {!editing && <button type="button" className="btn" onClick={() => submit(true)}><Icon n="plus" /> {t('btn.saveNext')}</button>}
+          <button type="submit" className="btn btn-primary"><Icon n="floppy-disk" /> {editing ? t('btn.update') : t('btn.save')}</button>
+        </>
+      )}>
+      <div className="mgrid">
+        {prefill && <div className="note" style={{ gridColumn: '1 / -1' }}><Icon n="wand-magic-sparkles" /><span>{t('scan.review')}</span></div>}
+        {isStaff && (
+          <Field id="o-emp" label={t('f.employee')} full>
+            <select id="o-emp" className="input" value={f.employeeId} onChange={set('employeeId')} {...af(!f.employeeId)}>
+              <option value="">{t('f.pickEmp')}</option>
+              {emps.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.empNo}</option>)}
+            </select>
+          </Field>
+        )}
+        <Field id="o-date" label={<>{t('f.date')} <em>{t('f.auto')}</em></>}>
+          <input id="o-date" className="input" type="date" value={f.date} onChange={set('date')} />
+        </Field>
+        <Field id="o-no" label={t('f.orderId')}>
+          <input id="o-no" dir="ltr" className="input num" type="text" inputMode="numeric" autoComplete="off" placeholder={t('f.orderIdPh')} value={f.orderNo} onChange={setNo} {...af(!!f.employeeId)} />
+        </Field>
+        <Field id="o-accept" label={t('f.accept')}>
+          <div className="with-now">
+            <input id="o-accept" dir="ltr" className="input num" type="time" value={f.accept} onChange={set('accept')} />
+            <button type="button" className="btn btn-now" title={t('f.nowTip')} onClick={now('accept')}><Icon n="clock" /> {t('f.now')}</button>
+          </div>
+        </Field>
+        <Field id="o-delivery" label={t('f.delivery')}>
+          <div className="with-now">
+            <input id="o-delivery" dir="ltr" className="input num" type="time" value={f.delivery} onChange={set('delivery')} />
+            <button type="button" className="btn btn-now" title={t('f.nowTip')} onClick={now('delivery')}><Icon n="clock" /> {t('f.now')}</button>
+          </div>
+        </Field>
+      </div>
+      <div className="calc" aria-live="polite">
+        <div className="hot"><span>{t('f.take')}</span><strong>{preview ? dur(preview.minutes) : '—'}</strong></div>
+        <div><span>{t('f.a2d')}</span><strong>{preview && preview.wraps ? t('f.nextDay') : '—'}</strong></div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------- orders tab ---------- */
+function OrdersTab({ orders, setOrders, users, me, scanned, onScanUsed }) {
+  const { t, dur } = useI18n();
+  const isStaff = me.role !== 'user';
+  const isAdmin = me.role === 'admin';
+  const [modal, setModal] = useState(null);
+  const [lastEmp, setLastEmp] = useState('');
+  const nameOf = (id) => { const u = users.find((x) => x.id === id); return u ? u.name : '—'; };
+  useEffect(() => {
+    if (scanned && scanned.kind === 'order') { setModal({ editing: null, prefill: scanned.data }); onScanUsed(); }
+  }, [scanned]);
+  const mine = useMemo(() => (isStaff ? orders : orders.filter((o) => o.employeeId === me.id)), [orders, isStaff, me.id]);
+  const rows = useMemo(() => mine.map((o) => ({ ...o, empName: nameOf(o.employeeId) })), [mine, users]);
+
+  function save(entry, id) {
+    if (id) { setOrders((l) => l.map((o) => (o.id === id ? { ...o, ...entry } : o))); Toast.fire({ icon: 'success', title: t('toast.updated') }); }
+    else { setOrders((l) => [...l, { id: uid(), createdAt: Date.now(), ...entry }]); Toast.fire({ icon: 'success', title: t('toast.orderSaved', { id: entry.orderId }) }); }
+    if (isStaff) setLastEmp(entry.employeeId);
+  }
+  async function remove(o) {
+    if (!(await confirmDelete(t, t('w.delOrderTitle', { id: o.orderId }), `${fmtDate(o.date)} · ${fmtTime(o.accept)} - ${fmtTime(o.delivery)}`))) return;
+    setOrders((l) => l.filter((x) => x.id !== o.id));
+    Toast.fire({ icon: 'success', title: t('toast.deleted') });
+  }
+  async function clearAll() {
+    if (!(await confirmDeleteAll(t, t('x.orders'), orders.length))) return;
+    setOrders([]);
+    Toast.fire({ icon: 'success', title: t('toast.allDeleted') });
+  }
+
+  const columns = [
+    { k: 'date', label: t('col.date'), cell: (o) => fmtDate(o.date) },
+    { k: 'orderId', label: t('col.orderId'), cell: (o) => <span className="num">{o.orderId}</span> },
+    ...(isStaff ? [{ k: 'empName', label: t('col.employee'), cell: (o) => o.empName }] : []),
+    { k: 'accept', label: t('col.accept'), cell: (o) => <span className="num">{fmtTime(o.accept)}</span> },
+    { k: 'delivery', label: t('col.delivery'), cell: (o) => <span className="num">{fmtTime(o.delivery)}</span> },
+    { k: 'minutes', label: t('col.take'), cell: (o) => <span className="chip">{dur(o.minutes)}</span> },
+    ...(isStaff ? [{ k: '_a', label: t('col.actions'), sortable: false, cls: 'end', cell: (o) => <RowActions editLabel={t('aria.editOrder', { id: o.orderId })} delLabel={t('aria.delOrder', { id: o.orderId })} onEdit={() => setModal({ editing: o })} onDelete={() => remove(o)} /> }] : [])
+  ];
+
+  return (
+    <>
+      <section className="card" aria-labelledby="ord-h">
+        <div className="card-head">
+          <h2 id="ord-h">{t('ord.title')}<small>{t('n.saved', { n: mine.length })}</small></h2>
+          <button type="button" className="btn btn-primary btn-add" onClick={() => setModal({ editing: null })}><Icon n="plus" /> {t('ord.add')}</button>
+        </div>
+        {mine.length === 0 ? (
+          <div className="empty"><Icon n="table-list" /><div>{t('empty.orders')}</div></div>
+        ) : (
+          <DataTable rows={rows} columns={columns} defaultSort={{ key: 'date', dir: 'desc' }}
+            searchText={(o) => `${o.orderId} ${fmtDate(o.date)} ${o.empName}`} searchPh={t('tbl.orderSearchPh')}
+            onDeleteAll={isAdmin ? clearAll : null}
+            renderStats={(list) => {
+              const total = list.reduce((s, o) => s + o.minutes, 0);
+              return <div className="stats"><Stat label={t('st.orders')} value={list.length} /><Stat label={t('st.totalTime')} value={dur(total)} /><Stat label={t('st.average')} value={list.length ? dur(total / list.length) : '—'} /></div>;
+            }} />
+        )}
+      </section>
+      {modal && <OrderModal editing={modal.editing} prefill={modal.prefill} orders={orders} users={users} me={me} lastEmp={lastEmp} onSave={save} onClose={() => setModal(null)} />}
+    </>
+  );
+}
+
+/* ---------- fuel modal: amount paid becomes liters at the set price ---------- */
+function FuelModal({ editing, prefill, fuel, users, me, price, lastEmp, onSave, onClose }) {
+  const { t } = useI18n();
+  const isStaff = me.role !== 'user';
+  const emps = users.filter((u) => u.active || (editing && u.id === editing.employeeId));
+  const [f, setF] = useState(() => (editing
+    ? { employeeId: editing.employeeId || '', date: editing.date, time: editing.time, odo: editing.odo, amount: String(entryAmount(editing)) }
+    : { employeeId: isStaff ? lastEmp || '' : me.id, date: (prefill && prefill.date) || today(), time: (prefill && prefill.time) || nowTime(), odo: (prefill && prefill.odo) || '', amount: prefill ? (prefill.amount ? String(prefill.amount) : (prefill.liters && Number(price) > 0 ? String(r2(prefill.liters * Number(price))) : '')) : '' }));
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const emp = users.find((u) => u.id === f.employeeId);
+  const plate = (emp && emp.plate) || (editing && editing.vehicle) || '';
+  const usedPrice = editing && editing.price > 0 ? editing.price : Number(price);
+  const amountNum = parseFloat(f.amount);
+  const liters = amountNum > 0 && usedPrice > 0 ? r2(amountNum / usedPrice) : null;
+  const odoOk = /^\d{1,9}$/.test(f.odo);
+
+  const prev = useMemo(() => (odoOk && plate ? findPrev(fuel, { vehicle: plate, date: f.date, time: f.time }, editing ? editing.id : null) : null), [fuel, plate, f.date, f.time, f.odo]);
+  const distance = prev && odoOk && parseInt(f.odo, 10) >= prev.odoNum ? parseInt(f.odo, 10) - prev.odoNum : null;
+  const kmpl = distance !== null && liters ? distance / liters : null;
+  const month = f.date.slice(0, 7);
+  const usedMonth = emp ? fuel.filter((e) => e.employeeId === emp.id && e.date.slice(0, 7) === month && (!editing || e.id !== editing.id)).reduce((s, e) => s + entryAmount(e), 0) : 0;
+  const limit = emp && emp.allowance > 0 ? emp.allowance : 0;
+  const after = usedMonth + (amountNum > 0 ? amountNum : 0);
+  const over = limit > 0 && after > limit;
+
+  async function submit(addNext) {
+    if (!f.employeeId) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.pickEmp') }); return; }
+    if (!plate) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.noPlateFuel') }); return; }
+    if (!f.date || !f.time || !f.odo || !f.amount) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.fuelMissing') }); return; }
+    if (!odoOk) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.odoBad') }); return; }
+    if (!(amountNum > 0)) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.amountBad') }); return; }
+    if (!(usedPrice > 0)) { Dlg.fire({ icon: 'warning', title: t('w.missingTitle'), text: t('w.noPrice') }); return; }
+    const odoVal = parseInt(f.odo, 10);
+    if (fuel.some((e) => (!editing || e.id !== editing.id) && vKey(e.vehicle) === vKey(plate) && odoNum(e) === odoVal)) { Dlg.fire({ icon: 'error', title: t('w.dupTitle'), text: t('w.odoDup') }); return; }
+    if (prev && odoVal < prev.odoNum) {
+      const r = await Dlg.fire({ icon: 'question', title: t('w.odoLowTitle'), text: t('w.odoLowText', { prev: prev.odo, odo: f.odo }), showCancelButton: true, confirmButtonText: t('w.odoLowYes'), cancelButtonText: t('w.odoLowNo') });
+      if (!r.isConfirmed) return;
+    }
+    if (over) {
+      const r = await Dlg.fire({ icon: 'warning', title: t('emp.fuelMonth'), text: t('w.overAllow', { name: emp.name, used: n2(after), limit: n2(limit) }), showCancelButton: true, confirmButtonText: t('w.overYes'), cancelButtonText: t('w.cancel') });
+      if (!r.isConfirmed) return;
+    }
+    onSave({ employeeId: f.employeeId, date: f.date, time: f.time, vehicle: plate, odo: f.odo, amount: r2(amountNum), price: usedPrice, liters }, editing ? editing.id : null);
+    if (addNext) setF((p) => ({ ...p, time: nowTime(), odo: '', amount: '' }));
+    else onClose();
+  }
+
+  return (
+    <Modal title={editing ? t('fuel.edit') : t('fuel.add')} icon="gas-pump" onClose={onClose} onSubmit={() => submit(false)}
+      footer={(
+        <>
+          <button type="button" className="btn btn-quiet" onClick={onClose}>{t('w.cancel')}</button>
+          {!editing && <button type="button" className="btn" onClick={() => submit(true)}><Icon n="plus" /> {t('btn.saveNext')}</button>}
+          <button type="submit" className="btn btn-primary"><Icon n="floppy-disk" /> {editing ? t('fuel.update') : t('fuel.save')}</button>
+        </>
+      )}>
+      <div className="mgrid">
+        {prefill && <div className="note" style={{ gridColumn: '1 / -1' }}><Icon n="wand-magic-sparkles" /><span>{t('scan.review')}</span></div>}
+        {isStaff && (
+          <Field id="g-emp" label={t('f.employee')}>
+            <select id="g-emp" className="input" value={f.employeeId} onChange={set('employeeId')} {...af(!f.employeeId)}>
+              <option value="">{t('f.pickEmp')}</option>
+              {emps.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.empNo}</option>)}
+            </select>
+          </Field>
+        )}
+        <Field id="g-plate" label={t('f.plate')} full={!isStaff}>
+          <input id="g-plate" dir="ltr" className="input num ro" type="text" readOnly value={plate || t('f.noPlate')} />
+        </Field>
+        <Field id="g-date" label={<>{t('f.date')} <em>{t('f.auto')}</em></>}>
+          <input id="g-date" className="input" type="date" value={f.date} onChange={set('date')} />
+        </Field>
+        <Field id="g-time" label={t('f.time')}>
+          <div className="with-now">
+            <input id="g-time" dir="ltr" className="input num" type="time" value={f.time} onChange={set('time')} />
+            <button type="button" className="btn btn-now" title={t('f.nowTip')} onClick={() => setF((p) => ({ ...p, time: nowTime() }))}><Icon n="clock" /> {t('f.now')}</button>
+          </div>
+        </Field>
+        <Field id="g-odo" label={t('f.odo')}>
+          <input id="g-odo" dir="ltr" className="input num" type="text" inputMode="numeric" autoComplete="off" placeholder={t('f.odoPh')} value={f.odo} onChange={(e) => setF((p) => ({ ...p, odo: e.target.value.replace(/\D/g, '').slice(0, 9) }))} {...af(!!f.employeeId)} />
+        </Field>
+        <Field id="g-amount" label={t('f.amount')}>
+          <input id="g-amount" dir="ltr" className="input num" type="text" inputMode="decimal" autoComplete="off" placeholder={t('f.amountPh')} value={f.amount} onChange={(e) => { const v = e.target.value; if (/^\d{0,5}(\.\d{0,2})?$/.test(v)) setF((p) => ({ ...p, amount: v })); }} />
+        </Field>
+      </div>
+      <div className="calc" aria-live="polite">
+        <div><span>{t('f.priceL')}</span><strong>{usedPrice > 0 ? n2(usedPrice) : '—'}</strong></div>
+        <div className="hot"><span>{t('f.litersAuto')}</span><strong>{liters !== null ? n2(liters) : '—'}</strong></div>
+        <div><span>{t('f.distance')}</span><strong>{distance !== null ? `${nKm(distance)} ${t('u.km')}` : '—'}</strong></div>
+        <div><span>{t('f.kmpl')}</span><strong>{kmpl !== null ? n2(kmpl) : '—'}</strong></div>
+      </div>
+      <p className="calc-note">{plate ? (prev ? t('fuel.prevNote', { odo: prev.odo }) : t('fuel.firstNote')) : ''}</p>
+      {over && <p className="calc-warn"><Icon n="triangle-exclamation" /> {t('w.overAllow', { name: emp.name, used: n2(after), limit: n2(limit) })}</p>}
+    </Modal>
+  );
+}
+
+/* ---------- fuel tab ---------- */
+function FuelTab({ fuel, setFuel, users, me, price, scanned, onScanUsed }) {
+  const { t } = useI18n();
+  const isStaff = me.role !== 'user';
+  const isAdmin = me.role === 'admin';
+  const [modal, setModal] = useState(null);
+  const [lastEmp, setLastEmp] = useState('');
+  const nameOf = (id) => { const u = users.find((x) => x.id === id); return u ? u.name : '—'; };
+  useEffect(() => {
+    if (scanned && scanned.kind === 'fuel') { setModal({ editing: null, prefill: scanned.data }); onScanUsed(); }
+  }, [scanned]);
+  const all = useMemo(() => fuelStats(fuel), [fuel]);
+  const mine = useMemo(() => (isStaff ? all : all.filter((e) => e.employeeId === me.id)), [all, isStaff, me.id]);
+  const rows = useMemo(() => mine.map((e) => ({ ...e, empName: nameOf(e.employeeId), litersN: e.liters, amountN: entryAmount(e) })), [mine, users]);
+
+  function save(entry, id) {
+    if (id) { setFuel((l) => l.map((e) => (e.id === id ? { ...e, ...entry } : e))); Toast.fire({ icon: 'success', title: t('toast.updated') }); }
+    else { setFuel((l) => [...l, { id: uid(), createdAt: Date.now(), ...entry }]); Toast.fire({ icon: 'success', title: t('toast.fuelSaved') }); }
+    if (isStaff) setLastEmp(entry.employeeId);
+  }
+  async function remove(e) {
+    if (!(await confirmDelete(t, t('w.delFuelTitle'), `${fmtDate(e.date)} · ${fmtTime(e.time)} · ${e.odo} ${t('u.km')}`))) return;
+    setFuel((l) => l.filter((x) => x.id !== e.id));
+    Toast.fire({ icon: 'success', title: t('toast.deleted') });
+  }
+  async function clearAll() {
+    if (!(await confirmDeleteAll(t, t('x.fuel'), fuel.length))) return;
+    setFuel([]);
+    Toast.fire({ icon: 'success', title: t('toast.allDeleted') });
+  }
+
+  const columns = [
+    { k: 'date', label: t('col.date'), cell: (e) => fmtDate(e.date) },
+    { k: 'time', label: t('col.time'), cell: (e) => <span className="num">{fmtTime(e.time)}</span> },
+    ...(isStaff ? [{ k: 'empName', label: t('col.employee'), cell: (e) => e.empName }] : []),
+    { k: 'vehicle', label: t('col.plate'), cell: (e) => <span className="num">{e.vehicle || '—'}</span> },
+    { k: 'odoNum', label: t('col.odo'), cell: (e) => <span className="num">{e.odo}</span> },
+    { k: 'litersN', label: t('col.liters'), cell: (e) => <span className="num">{n2(e.liters)}</span> },
+    { k: 'amountN', label: t('col.amount'), cell: (e) => <span className="num">{n2(e.amountN)}</span> },
+    { k: 'distance', label: t('col.distance'), cell: (e) => <span className="num">{nKm(e.distance)}</span> },
+    { k: 'kmpl', label: t('col.kmpl'), cell: (e) => (e.kmpl === null ? '—' : <span className="chip">{n2(e.kmpl)}</span>) },
+    ...(isStaff ? [{ k: '_a', label: t('col.actions'), sortable: false, cls: 'end', cell: (e) => <RowActions editLabel={t('aria.editEntry')} delLabel={t('aria.delEntry')} onEdit={() => setModal({ editing: e })} onDelete={() => remove(e)} /> }] : [])
+  ];
+
+  return (
+    <>
+      <section className="card" aria-labelledby="fuel-h">
+        <div className="card-head">
+          <h2 id="fuel-h">{t('fuel.title')}<small>{t('n.saved', { n: mine.length })}</small></h2>
+          <button type="button" className="btn btn-primary btn-add" onClick={() => setModal({ editing: null })}><Icon n="plus" /> {t('fuel.add')}</button>
+        </div>
+        {mine.length === 0 ? (
+          <div className="empty"><Icon n="gas-pump" /><div>{t('empty.fuel')}</div></div>
+        ) : (
+          <DataTable rows={rows} columns={columns} defaultSort={{ key: 'date', dir: 'desc' }}
+            searchText={(e) => `${e.vehicle} ${e.odo} ${fmtDate(e.date)} ${e.empName}`} searchPh={t('fuel.searchPh')}
+            onDeleteAll={isAdmin ? clearAll : null}
+            renderStats={(list) => {
+              const a = aggFuel(list);
+              return <div className="stats"><Stat label={t('st.fills')} value={a.fills} /><Stat label={t('st.liters')} value={n2(a.liters)} /><Stat label={t('st.cost')} value={`${n2(a.cost)} ${CURRENCY}`} /><Stat label={t('st.distance')} value={`${nKm(a.distance)} ${t('u.km')}`} /><Stat label={t('st.kmpl')} value={n2(a.kmpl)} /></div>;
+            }} />
+        )}
+      </section>
+      {modal && <FuelModal editing={modal.editing} prefill={modal.prefill} fuel={fuel} users={users} me={me} price={price} lastEmp={lastEmp} onSave={save} onClose={() => setModal(null)} />}
+    </>
+  );
+}
+
+/* ---------- employee modal ---------- */
+function EmployeeModal({ editing, users, me, onSave, onClose }) {
+  const { t } = useI18n();
+  const [f, setF] = useState(() => (editing
+    ? { name: editing.name, role: editing.role, username: editing.username, password: '', iqama: editing.iqama || '', iqamaExp: editing.iqamaExp || '', nation: editing.nation || '', phone: editing.phone || '', plate: editing.plate || '', vtype: editing.vtype || 'motorcycle', allowance: String(editing.allowance || 0), active: editing.active ? 'yes' : 'no' }
+    : { name: '', role: 'user', username: '', password: '', iqama: '', iqamaExp: '', nation: '', phone: '', plate: '', vtype: 'motorcycle', allowance: '0', active: 'yes' }));
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const digits = (k, n) => (e) => setF((p) => ({ ...p, [k]: e.target.value.replace(/\D/g, '').slice(0, n) }));
+  const warn = (text, title) => Dlg.fire({ icon: 'warning', title: title || t('w.missingTitle'), text });
+
+  function submit() {
+    const username = f.username.trim();
+    if (!f.name.trim()) return warn(t('w.empName'));
+    if (f.iqama && !/^\d{10}$/.test(f.iqama)) return warn(t('w.iqamaBad'));
+    if (f.iqama && users.some((u) => u.id !== (editing && editing.id) && u.iqama === f.iqama)) return warn(t('w.iqamaDup'));
+    if (!/^[A-Za-z0-9._-]{3,20}$/.test(username)) return warn(t('w.userBad'));
+    if (users.some((u) => u.id !== (editing && editing.id) && u.username.toLowerCase() === username.toLowerCase())) return warn(t('w.userDup'));
+    if ((!editing || f.password) && f.password.length < 6) return warn(t('w.passBad'));
+    if (editing && editing.role === 'admin' && (f.role !== 'admin' || f.active === 'no')) {
+      const others = users.filter((u) => u.id !== editing.id && u.role === 'admin' && u.active);
+      if (!others.length) return warn(t('w.lastAdmin'));
+    }
+    const allowance = Number(f.allowance);
+    onSave({ ...f, username, allowance: allowance > 0 ? allowance : 0 }, editing);
+  }
+
+  return (
+    <Modal title={editing ? t('emp.edit') : t('emp.add')} icon="user-plus" wide onClose={onClose} onSubmit={submit}
+      footer={(
+        <>
+          <button type="button" className="btn btn-quiet" onClick={onClose}>{t('w.cancel')}</button>
+          <button type="submit" className="btn btn-primary"><Icon n="floppy-disk" /> {t('btn.saveGeneric')}</button>
+        </>
+      )}>
+      <div className="mgrid">
+        <div className="sec-title">{t('emp.sec1')}</div>
+        <Field id="e-name" label={t('emp.name')} full><input id="e-name" className="input" type="text" autoComplete="off" value={f.name} onChange={set('name')} data-autofocus="" /></Field>
+        <Field id="e-iqama" label={t('emp.iqama')}><input id="e-iqama" dir="ltr" className="input num" type="text" inputMode="numeric" autoComplete="off" placeholder="2xxxxxxxxx" value={f.iqama} onChange={digits('iqama', 10)} /></Field>
+        <Field id="e-iexp" label={t('emp.iqamaExp')}><input id="e-iexp" className="input" type="date" value={f.iqamaExp} onChange={set('iqamaExp')} /></Field>
+        <Field id="e-nat" label={t('emp.nation')}><input id="e-nat" className="input" type="text" autoComplete="off" value={f.nation} onChange={set('nation')} /></Field>
+        <Field id="e-phone" label={t('emp.phone')}><input id="e-phone" dir="ltr" className="input num" type="tel" autoComplete="off" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF((p) => ({ ...p, phone: e.target.value.replace(/[^\d+]/g, '').slice(0, 15) }))} /></Field>
+
+        <div className="sec-title">{t('emp.sec2')}</div>
+        <Field id="e-plate" label={t('emp.plate')}><input id="e-plate" dir="ltr" className="input num" type="text" autoComplete="off" placeholder="ABC 1234" value={f.plate} onChange={(e) => setF((p) => ({ ...p, plate: e.target.value.toUpperCase().slice(0, 12) }))} /></Field>
+        <Field id="e-vtype" label={t('emp.vtype')}>
+          <select id="e-vtype" className="input" value={f.vtype} onChange={set('vtype')}>{VTYPES.map(([v, k]) => <option key={v} value={v}>{t(k)}</option>)}</select>
+        </Field>
+        <Field id="e-allow" label={t('emp.allow')} full hint={<span className="sub">{t('emp.allowHint')}</span>}>
+          <input id="e-allow" dir="ltr" className="input num" type="text" inputMode="decimal" value={f.allowance} onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,2})?$/.test(v)) setF((p) => ({ ...p, allowance: v })); }} />
+        </Field>
+
+        <div className="sec-title">{t('emp.sec3')}</div>
+        <Field id="e-role" label={t('emp.role')}>
+          <select id="e-role" className="input" value={f.role} onChange={set('role')}>{ROLES.map((r) => <option key={r} value={r}>{t('role.' + r)}</option>)}</select>
+        </Field>
+        <Field id="e-status" label={t('emp.status')}>
+          <select id="e-status" className="input" value={f.active} onChange={set('active')}><option value="yes">{t('emp.active')}</option><option value="no">{t('emp.inactive')}</option></select>
+        </Field>
+        <Field id="e-user" label={t('emp.username')}><input id="e-user" dir="ltr" className="input num" type="text" autoComplete="off" autoCapitalize="none" value={f.username} onChange={set('username')} /></Field>
+        <Field id="e-pass" label={t('emp.password')} hint={editing ? <span className="sub">{t('emp.passKeep')}</span> : null}><input id="e-pass" dir="ltr" className="input" type="text" autoComplete="new-password" value={f.password} onChange={set('password')} /></Field>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------- employees tab (Admin edits, Supervisor views) ---------- */
+function EmployeesTab({ users, setUsers, fuel, me, price, setPrice, restoreAll, backupData }) {
+  const { t } = useI18n();
+  const isAdmin = me.role === 'admin';
+  const [modal, setModal] = useState(null);
+  const [priceIn, setPriceIn] = useState(String(price));
+  const fileRef = useRef(null);
+  const month = today().slice(0, 7);
+  const rows = useMemo(() => users.map((u) => ({
+    ...u,
+    used: fuel.filter((e) => e.employeeId === u.id && e.date.slice(0, 7) === month).reduce((s, e) => s + entryAmount(e), 0)
+  })), [users, fuel, month]);
+
+  function savePrice() {
+    const p = parseFloat(priceIn);
+    if (!(p > 0)) { Dlg.fire({ icon: 'warning', text: t('w.priceBad') }); return; }
+    setPrice(String(p));
+    Toast.fire({ icon: 'success', title: t('toast.priceSaved') });
+  }
+
+  async function saveEmployee(f, editing) {
+    const fields = { name: f.name.trim(), role: f.role, username: f.username, iqama: f.iqama, iqamaExp: f.iqamaExp, nation: f.nation.trim(), phone: f.phone, plate: f.plate.trim(), vtype: f.vtype, allowance: f.allowance, active: f.active === 'yes' };
+    if (editing) {
+      const next = { ...editing, ...fields };
+      if (f.password) { const salt = randSalt(); next.salt = salt; next.hash = await hashPw(f.password, salt); next.defaultPw = false; }
+      setUsers((l) => l.map((u) => (u.id === editing.id ? next : u)));
+    } else {
+      const salt = randSalt();
+      const next = { id: uid(), createdAt: Date.now(), empNo: nextEmpNo(users), joined: today(), defaultPw: false, ...fields, salt, hash: await hashPw(f.password, salt) };
+      setUsers((l) => [...l, next]);
+    }
+    setModal(null);
+    Toast.fire({ icon: 'success', title: t('toast.empSaved') });
+  }
+
+  async function remove(u) {
+    if (u.id === me.id) { Dlg.fire({ icon: 'warning', text: t('w.selfDel') }); return; }
+    if (u.role === 'admin' && !users.some((x) => x.id !== u.id && x.role === 'admin' && x.active)) { Dlg.fire({ icon: 'warning', text: t('w.lastAdmin') }); return; }
+    if (!(await confirmDelete(t, t('w.delEmpTitle', { name: u.name }), t('w.delEmpText')))) return;
+    setUsers((l) => l.filter((x) => x.id !== u.id));
+    Toast.fire({ icon: 'success', title: t('toast.empDeleted') });
+  }
+
+  function download() {
+    const blob = new Blob([JSON.stringify(backupData())], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `keeta-backup-${today()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  function onFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const rd = new FileReader();
+    rd.onload = async () => {
+      let d = null;
+      try { d = JSON.parse(rd.result); } catch (err) { d = null; }
+      if (!d || d.app !== 'keeta' || !Array.isArray(d.orders) || !Array.isArray(d.fuel) || !Array.isArray(d.users) || !d.users.some((u) => u.role === 'admin' && u.active)) {
+        Dlg.fire({ icon: 'error', text: t('w.restoreBad') }); return;
+      }
+      const r = await Dlg.fire({ icon: 'warning', title: t('w.restoreTitle'), text: t('w.restoreText'), showCancelButton: true, confirmButtonText: t('w.restoreYes'), cancelButtonText: t('w.cancel') });
+      if (!r.isConfirmed) return;
+      restoreAll(d);
+      Toast.fire({ icon: 'success', title: t('toast.restored') });
+    };
+    rd.readAsText(file);
+  }
+
+  const columns = [
+    { k: 'empNo', label: t('emp.no'), cell: (u) => <span className="num">{u.empNo}</span> },
+    { k: 'name', label: t('emp.name'), cell: (u) => <>{u.name}<span className="sub num" dir="ltr">@{u.username}</span></> },
+    { k: 'role', label: t('emp.role'), cell: (u) => <RoleBadge role={u.role} /> },
+    { k: 'iqama', label: t('emp.iqama'), cell: (u) => {
+      const s = iqamaState(u.iqamaExp, t);
+      return <>{u.iqama ? <span className="num">{u.iqama}</span> : '—'}{s && <span className="sub"><span className={`badge ${s.cls}`}>{s.text}</span></span>}</>;
+    } },
+    { k: 'plate', label: t('emp.plate'), cell: (u) => <>{u.plate ? <span className="num">{u.plate}</span> : '—'}{u.plate && <span className="sub">{t((VTYPES.find((v) => v[0] === u.vtype) || VTYPES[0])[1])}</span>}</> },
+    { k: 'phone', label: t('emp.phone'), cell: (u) => <span className="num" dir="ltr">{u.phone || '—'}</span> },
+    { k: 'used', label: t('emp.fuelMonth'), cell: (u) => {
+      const pct = u.allowance > 0 ? Math.min(100, (u.used / u.allowance) * 100) : 0;
+      return <><span className="num">{n2(u.used)}{u.allowance > 0 ? ` / ${n2(u.allowance)}` : ''}</span>{u.allowance > 0 && <div className={`meter${u.used > u.allowance ? ' over' : ''}`}><i style={{ width: `${pct}%` }} /></div>}</>;
+    } },
+    { k: 'active', label: t('emp.status'), cell: (u) => <span className={`badge ${u.active ? 'ok' : 'bad'}`}>{u.active ? t('emp.active') : t('emp.inactive')}</span> },
+    ...(isAdmin ? [{ k: '_a', label: t('col.actions'), sortable: false, cls: 'end', cell: (u) => <RowActions editLabel={`${t('act.edit')} ${u.name}`} delLabel={`${t('act.delete')} ${u.name}`} onEdit={() => setModal({ editing: u })} onDelete={() => remove(u)} /> }] : [])
+  ];
+
+  return (
+    <>
+      {isAdmin && (
+        <section className="card" aria-labelledby="set-h">
+          <div className="card-head"><h2 id="set-h">{t('set.title')}</h2></div>
+          <div className="settings">
+            <div>
+              <h3>{t('set.price')}</h3>
+              <p>{t('set.priceHelp')}</p>
+              <div className="row">
+                <div className="field"><label htmlFor="s-price">{t('f.priceL')}</label><input id="s-price" dir="ltr" className="input num" type="text" inputMode="decimal" value={priceIn} onChange={(e) => { const v = e.target.value; if (/^\d{0,3}(\.\d{0,3})?$/.test(v)) setPriceIn(v); }} /></div>
+                <button type="button" className="btn btn-primary" onClick={savePrice}><Icon n="floppy-disk" /> {t('set.save')}</button>
+              </div>
+            </div>
+            <div>
+              <h3>{t('set.dataTitle')}</h3>
+              <p>{t('set.dataHelp')}</p>
+              <div className="row">
+                <button type="button" className="btn" onClick={download}><Icon n="download" /> {t('set.backup')}</button>
+                <button type="button" className="btn" onClick={() => fileRef.current && fileRef.current.click()}><Icon n="upload" /> {t('set.restore')}</button>
+                <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
+              </div>
+            </div>
+            <AiSettings />
+          </div>
+        </section>
+      )}
+
+      <section className="card" aria-labelledby="emp-h">
+        <div className="card-head">
+          <h2 id="emp-h">{t('emp.title')}<small>{t('n.saved', { n: users.length })}</small></h2>
+          {isAdmin && <button type="button" className="btn btn-primary btn-add" onClick={() => setModal({ editing: null })}><Icon n="user-plus" /> {t('emp.add')}</button>}
+        </div>
+        <DataTable rows={rows} columns={columns} dateFilter={false} defaultSort={{ key: 'empNo', dir: 'asc' }}
+          searchText={(u) => `${u.name} ${u.username} ${u.iqama} ${u.plate} ${u.empNo}`} searchPh={t('emp.searchPh')} />
+      </section>
+      {modal && <EmployeeModal editing={modal.editing} users={users} me={me} onSave={saveEmployee} onClose={() => setModal(null)} />}
+    </>
+  );
+}
+
+/* ---------- report (details + summary, printable) ---------- */
+const Totals = ({ items }) => (
+  <div className="totals" style={{ '--n': items.length }}>
+    {items.map(([l, v]) => <div key={l}><span>{l}</span><strong>{v}</strong></div>)}
+  </div>
+);
+
+function ReportTab({ orders, fuel, users, me }) {
+  const { t, dur } = useI18n();
+  const isStaff = me.role !== 'user';
+  const [from, setFrom] = useState(moment().startOf('month').format(DATE_FMT));
+  const [to, setTo] = useState(today());
+  const [type, setType] = useState('orders');
+  const [mode, setMode] = useState('both');
+  const [empId, setEmpId] = useState('all');
+  const sel = isStaff ? empId : me.id;
+  const allEmp = sel === 'all';
+  const selUser = allEmp ? null : users.find((u) => u.id === sel);
+  const nameOf = (id) => { const u = users.find((x) => x.id === id); return u ? u.name : '—'; };
+
+  const quick = {
+    [t('q.today')]: () => [today(), today()],
+    [t('q.yesterday')]: () => { const y = moment().subtract(1, 'day').format(DATE_FMT); return [y, y]; },
+    [t('q.week')]: () => [moment().startOf('week').format(DATE_FMT), today()],
+    [t('q.month')]: () => [moment().startOf('month').format(DATE_FMT), today()],
+    [t('q.all')]: () => ['', '']
+  };
+
+  const inScope = (r) => (!from || r.date >= from) && (!to || r.date <= to) && (allEmp || r.employeeId === sel);
+  const oRows = useMemo(() => orders.filter(inScope).map((o) => ({ ...o, empName: nameOf(o.employeeId) })), [orders, users, from, to, sel]);
+  const fAll = useMemo(() => fuelStats(fuel), [fuel]);
+  const fRows = useMemo(() => fAll.filter(inScope).map((e) => ({ ...e, empName: nameOf(e.employeeId), amountN: entryAmount(e) })), [fAll, users, from, to, sel]);
+  const oDays = useMemo(() => groupByDate(oRows), [oRows]);
+  const fDays = useMemo(() => groupFuelByDate(fRows), [fRows]);
+  const isOrders = type === 'orders';
+  const hasData = isOrders ? oRows.length > 0 : fRows.length > 0;
+  const showDetails = mode !== 'summary';
+  const showSummary = mode !== 'details';
+
+  const oGrand = useMemo(() => { const total = oRows.reduce((s, o) => s + o.minutes, 0); return { count: oRows.length, total, avg: oRows.length ? total / oRows.length : 0 }; }, [oRows]);
+  const fGrand = useMemo(() => aggFuel(fRows), [fRows]);
+  const empGroups = useMemo(() => {
+    const src = isOrders ? oRows : fRows;
+    const ids = [...new Set(src.map((r) => r.employeeId || ''))];
+    return ids.map((id) => {
+      const list = src.filter((r) => (r.employeeId || '') === id);
+      const u = users.find((x) => x.id === id);
+      return { id, name: nameOf(id), plate: u ? u.plate : '', list, o: isOrders ? { count: list.length, total: list.reduce((s, o) => s + o.minutes, 0) } : null, f: isOrders ? null : aggFuel(list) };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [isOrders, oRows, fRows, users]);
+
+  const period = !from && !to ? t('rep.pAll') : from && to ? (from === to ? fmtDate(from) : t('rep.pRange', { a: fmtDate(from), b: fmtDate(to) })) : from ? t('rep.pFrom', { a: fmtDate(from) }) : t('rep.pUpTo', { a: fmtDate(to) });
+
+  function printReport() {
+    if (!hasData) { Dlg.fire({ icon: 'info', title: t('w.nothingTitle'), text: t('w.nothingText') }); return; }
+    setTimeout(() => window.print(), 100);
+  }
+
+  return (
+    <>
+      <section className="card report-controls no-print" aria-label={t('tab.report')}>
+        <div className="controls-row">
+          {isStaff && (
+            <div className="field">
+              <label htmlFor="r-emp">{t('rep.employeeFilter')}</label>
+              <select id="r-emp" className="input" value={empId} onChange={(e) => setEmpId(e.target.value)}>
+                <option value="all">{t('rep.allEmp')}</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.empNo}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="field"><label htmlFor="r-from">{t('tbl.from')}</label><input id="r-from" className="input" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div className="field"><label htmlFor="r-to">{t('tbl.to')}</label><input id="r-to" className="input" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          <div className="quick" role="group" aria-label={t('tbl.from')}>
+            {Object.keys(quick).map((k) => <button key={k} type="button" className="btn btn-quiet btn-sm" onClick={() => { const [a, b] = quick[k](); setFrom(a); setTo(b); }}>{k}</button>)}
+          </div>
+        </div>
+        <div className="controls-row" style={{ justifyContent: 'space-between' }}>
+          <div className="controls-row">
+            <div className="seg" role="group" aria-label={t('rep.type')}>
+              <button type="button" aria-pressed={isOrders} onClick={() => setType('orders')}>{t('rep.typeOrders')}</button>
+              <button type="button" aria-pressed={!isOrders} onClick={() => setType('fuel')}>{t('rep.typeFuel')}</button>
+            </div>
+            <div className="seg" role="group" aria-label={t('rep.details')}>
+              <button type="button" aria-pressed={mode === 'both'} onClick={() => setMode('both')}>{t('m.both')}</button>
+              <button type="button" aria-pressed={mode === 'details'} onClick={() => setMode('details')}>{t('m.details')}</button>
+              <button type="button" aria-pressed={mode === 'summary'} onClick={() => setMode('summary')}>{t('m.summary')}</button>
+            </div>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={printReport}><Icon n="print" /> {t('btn.print')}</button>
+        </div>
+      </section>
+
+      <article className="sheet" aria-label={isOrders ? t('rep.titleOrders') : t('rep.titleFuel')}>
+        <header className="sheet-head">
+          <div className="sheet-brand">
+            <Logo />
+            <div>
+              <div className="sheet-title">Keeta</div>
+              <div className="sheet-sub">{isOrders ? t('rep.titleOrders') : t('rep.titleFuel')}</div>
+            </div>
+          </div>
+          <div className="meta">
+            <div><span>{t('rep.employee')}</span><b>{selUser ? selUser.name : t('rep.allEmp')}</b></div>
+            {selUser && selUser.iqama && <div><span>{t('rep.iqama')}</span><b className="num">{selUser.iqama}</b></div>}
+            {selUser && selUser.plate && <div><span>{t('rep.plate')}</span><b className="num">{selUser.plate}</b></div>}
+            <div><span>{t('rep.period')}</span><b>{period}</b></div>
+            <div><span>{t('rep.printed')}</span><b className="num">{fm(moment(), 'DD MMM YYYY, hh:mm A')}</b></div>
+          </div>
+        </header>
+
+        {!hasData && <div className="empty"><Icon n="chart-column" /><div>{t('rep.noData')}</div></div>}
+
+        {hasData && showDetails && (
+          <section>
+            <h2 className="section-title">{t('rep.details')}</h2>
+            <div style={{ display: 'grid', gap: 22 }}>
+              {isOrders ? oDays.map((d) => (
+                <div className="day" key={d.date}>
+                  <div className="day-head"><h3>{fmtDay(d.date)}</h3><span>{t('rep.countOrders', { n: d.count })}</span></div>
+                  <div className="table-wrap"><table>
+                    <thead><tr><th>{t('col.sl')}</th><th>{t('col.orderId')}</th>{allEmp && <th>{t('col.employee')}</th>}<th>{t('col.accept')}</th><th>{t('col.delivery')}</th><th>{t('col.take')}</th></tr></thead>
+                    <tbody>{d.items.map((o, i) => (
+                      <tr key={o.id}><td className="num">{i + 1}</td><td className="num">{o.orderId}</td>{allEmp && <td>{o.empName}</td>}<td className="num">{fmtTime(o.accept)}</td><td className="num">{fmtTime(o.delivery)}</td><td className="num">{dur(o.minutes)}</td></tr>
+                    ))}</tbody>
+                  </table></div>
+                  <Totals items={[[t('rep.totalOrders'), d.count], [t('rep.totalTime'), dur(d.total)], [t('rep.average'), dur(d.avg)]]} />
+                </div>
+              )) : fDays.map((d) => (
+                <div className="day" key={d.date}>
+                  <div className="day-head"><h3>{fmtDay(d.date)}</h3><span>{t('rep.countFills', { n: d.fills })}</span></div>
+                  <div className="table-wrap"><table>
+                    <thead><tr><th>{t('col.sl')}</th><th>{t('col.time')}</th>{allEmp && <th>{t('col.employee')}</th>}<th>{t('col.plate')}</th><th>{t('col.odo')}</th><th>{t('col.liters')}</th><th>{t('col.amount')}</th><th>{t('col.distance')}</th><th>{t('col.kmpl')}</th></tr></thead>
+                    <tbody>{d.items.map((e, i) => (
+                      <tr key={e.id}><td className="num">{i + 1}</td><td className="num">{fmtTime(e.time)}</td>{allEmp && <td>{e.empName}</td>}<td className="num">{e.vehicle || '—'}</td><td className="num">{e.odo}</td><td className="num">{n2(e.liters)}</td><td className="num">{n2(e.amountN)}</td><td className="num">{nKm(e.distance)}</td><td className="num">{n2(e.kmpl)}</td></tr>
+                    ))}</tbody>
+                  </table></div>
+                  <Totals items={[[t('rep.totalFills'), d.fills], [t('rep.totalLiters'), n2(d.liters)], [t('rep.totalCost'), `${n2(d.cost)} ${CURRENCY}`], [t('rep.totalDistance'), `${nKm(d.distance)} ${t('u.km')}`], [t('rep.avgKmpl'), n2(d.kmpl)]]} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {hasData && showSummary && (
+          <section className="sum-section">
+            <h2 className="section-title">{t('rep.summary')}</h2>
+            <div className="table-wrap">
+              {isOrders ? (
+                <table className="sum-table">
+                  <thead><tr><th>{t('col.sl')}</th><th>{t('col.date')}</th><th className="end">{t('col.orders')}</th><th className="end">{t('rep.totalTime')}</th><th className="end">{t('rep.average')}</th><th className="end">{t('rep.fastest')}</th><th className="end">{t('rep.slowest')}</th></tr></thead>
+                  <tbody>{oDays.map((d, i) => (
+                    <tr key={d.date}><td className="num">{i + 1}</td><td>{fmtShortDay(d.date)}</td><td className="num end">{d.count}</td><td className="num end">{dur(d.total)}</td><td className="num end">{dur(d.avg)}</td><td className="num end">{dur(d.min)}</td><td className="num end">{dur(d.max)}</td></tr>
+                  ))}</tbody>
+                  <tfoot><tr><td colSpan="2">{t('rep.totalDays', { n: oDays.length })}</td><td className="num end">{oGrand.count}</td><td className="num end">{dur(oGrand.total)}</td><td className="num end">{dur(oGrand.avg)}</td><td className="num end">{dur(Math.min(...oDays.map((d) => d.min)))}</td><td className="num end">{dur(Math.max(...oDays.map((d) => d.max)))}</td></tr></tfoot>
+                </table>
+              ) : (
+                <table className="sum-table">
+                  <thead><tr><th>{t('col.sl')}</th><th>{t('col.date')}</th><th className="end">{t('col.fills')}</th><th className="end">{t('col.liters')}</th><th className="end">{t('col.amount')}</th><th className="end">{t('col.distance')}</th><th className="end">{t('col.kmpl')}</th></tr></thead>
+                  <tbody>{fDays.map((d, i) => (
+                    <tr key={d.date}><td className="num">{i + 1}</td><td>{fmtShortDay(d.date)}</td><td className="num end">{d.fills}</td><td className="num end">{n2(d.liters)}</td><td className="num end">{n2(d.cost)}</td><td className="num end">{nKm(d.distance)}</td><td className="num end">{n2(d.kmpl)}</td></tr>
+                  ))}</tbody>
+                  <tfoot><tr><td colSpan="2">{t('rep.totalDays', { n: fDays.length })}</td><td className="num end">{fGrand.fills}</td><td className="num end">{n2(fGrand.liters)}</td><td className="num end">{n2(fGrand.cost)}</td><td className="num end">{nKm(fGrand.distance)}</td><td className="num end">{n2(fGrand.kmpl)}</td></tr></tfoot>
+                </table>
+              )}
+            </div>
+          </section>
+        )}
+
+        {hasData && showSummary && allEmp && (
+          <section>
+            <h2 className="section-title">{t('rep.empSummary')}</h2>
+            <div className="table-wrap">
+              {isOrders ? (
+                <table className="sum-table">
+                  <thead><tr><th>{t('col.sl')}</th><th>{t('col.employee')}</th><th className="end">{t('col.orders')}</th><th className="end">{t('rep.totalTime')}</th><th className="end">{t('rep.average')}</th></tr></thead>
+                  <tbody>{empGroups.map((g, i) => (
+                    <tr key={g.id}><td className="num">{i + 1}</td><td>{g.name}</td><td className="num end">{g.o.count}</td><td className="num end">{dur(g.o.total)}</td><td className="num end">{dur(g.o.total / g.o.count)}</td></tr>
+                  ))}</tbody>
+                </table>
+              ) : (
+                <table className="sum-table">
+                  <thead><tr><th>{t('col.sl')}</th><th>{t('col.employee')}</th><th>{t('col.plate')}</th><th className="end">{t('col.fills')}</th><th className="end">{t('col.liters')}</th><th className="end">{t('col.amount')}</th><th className="end">{t('col.distance')}</th><th className="end">{t('col.kmpl')}</th></tr></thead>
+                  <tbody>{empGroups.map((g, i) => (
+                    <tr key={g.id}><td className="num">{i + 1}</td><td>{g.name}</td><td className="num">{g.plate || '—'}</td><td className="num end">{g.f.fills}</td><td className="num end">{n2(g.f.liters)}</td><td className="num end">{n2(g.f.cost)}</td><td className="num end">{nKm(g.f.distance)}</td><td className="num end">{n2(g.f.kmpl)}</td></tr>
+                  ))}</tbody>
+                </table>
+              )}
+            </div>
+          </section>
+        )}
+
+        <div className="sign"><div>{t('rep.sign1')}</div><div>{t('rep.sign2')}</div></div>
+      </article>
+    </>
+  );
+}
+
+/* ---------- change password + SOP dialogs ---------- */
+function PasswordModal({ me, onSave, onClose }) {
+  const { t } = useI18n();
+  const [f, setF] = useState({ old: '', next: '', again: '' });
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  async function submit() {
+    if (!(await checkPw(f.old, me))) { Dlg.fire({ icon: 'error', text: t('pw.wrongOld') }); return; }
+    if (f.next.length < 6) { Dlg.fire({ icon: 'warning', text: t('w.passBad') }); return; }
+    if (f.next !== f.again) { Dlg.fire({ icon: 'warning', text: t('pw.mismatch') }); return; }
+    await onSave(f.next);
+    onClose();
+  }
+  return (
+    <Modal title={t('pw.title')} icon="key" onClose={onClose} onSubmit={submit}
+      footer={(<><button type="button" className="btn btn-quiet" onClick={onClose}>{t('w.cancel')}</button><button type="submit" className="btn btn-primary"><Icon n="floppy-disk" /> {t('pw.save')}</button></>)}>
+      <div className="mgrid">
+        <Field id="p-old" label={t('pw.old')} full><input id="p-old" className="input" type="password" autoComplete="current-password" value={f.old} onChange={set('old')} data-autofocus="" /></Field>
+        <Field id="p-new" label={t('pw.new')}><input id="p-new" className="input" type="password" autoComplete="new-password" value={f.next} onChange={set('next')} /></Field>
+        <Field id="p-again" label={t('pw.confirm')}><input id="p-again" className="input" type="password" autoComplete="new-password" value={f.again} onChange={set('again')} /></Field>
+      </div>
+    </Modal>
+  );
+}
+
+function RoleList() {
+  const { t } = useI18n();
+  return (
+    <div className="role-list">
+      <h3>{t('login.roles')}</h3>
+      {ROLES.map((r) => <div className="role-item" key={r}><RoleBadge role={r} /><span>{t(`role.${r}.d`)}</span></div>)}
+    </div>
+  );
+}
+
+function SopModal({ onClose }) {
+  const { t } = useI18n();
+  return (
+    <Modal title={t('sop.title')} icon="book" wide onClose={onClose}
+      footer={<button type="button" className="btn btn-primary" onClick={onClose}>{t('btn.close')}</button>}>
+      <SopFlow light />
+      <div className="sop-roles"><h3>{t('sop.who')}</h3>{ROLES.map((r) => <div className="role-item" key={r}><RoleBadge role={r} /><span>{t(`role.${r}.d`)}</span></div>)}</div>
+    </Modal>
+  );
+}
+
+/* ---------- scan a picture with Gemini or OpenAI ---------- */
+const LS_AI = 'keeta_ai_v1';
+const AI_DEFAULTS = { gemini: 'gemini-2.5-flash', openai: 'gpt-4o-mini' };
+// OPTIONAL: paste the key here ONCE and it works on every phone/computer that opens this file,
+// with no setup. Anyone who can open the page source can read it, so use a key with a spending limit.
+const BUILT_IN_AI = { provider: 'gemini', key: '', model: '' };
+const cleanAI = (c) => ({ provider: c && c.provider === 'openai' ? 'openai' : 'gemini', key: (c && c.key) || '', model: (c && c.model) || '' });
+// the key the administrator saved on this device wins; otherwise use the built-in one (if any)
+const loadAI = () => { const c = cleanAI(load(LS_AI, null)); return c.key ? c : cleanAI(BUILT_IN_AI); };
+
+const imageToJpeg = (file, max = 1400) => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const s = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.width * s));
+    c.height = Math.max(1, Math.round(img.height * s));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    resolve(c.toDataURL('image/jpeg', 0.85));
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image')); };
+  img.src = url;
+});
+
+const scanPrompt = (kind) => (kind === 'order'
+  ? `You read a screenshot or photo from a food delivery rider app. Find the order number and the times. Reply with JSON only: {"orderNo": digits only as a string or null, "date": "YYYY-MM-DD" or null, "acceptTime": "HH:mm" in 24-hour time or null, "deliveryTime": "HH:mm" in 24-hour time or null}. acceptTime is when the rider accepted or received the order. deliveryTime is when the order was delivered or completed. Convert AM/PM to 24-hour time. Use null for anything you cannot read clearly. Never guess. Today is ${today()}.`
+  : `You read a photo of a fuel station receipt or a vehicle odometer. Reply with JSON only: {"odometer": digits only as a string or null, "amount": total money paid as a number or null, "liters": liters of fuel as a number or null, "date": "YYYY-MM-DD" or null, "time": "HH:mm" in 24-hour time or null}. odometer is the total distance shown in kilometers, not the trip meter. Use null for anything you cannot read clearly. Never guess. Today is ${today()}.`);
+
+const cleanTime = (v) => {
+  const m = /(\d{1,2})\s*[:.]\s*(\d{2})\s*([ap])?\.?\s*m?/i.exec(String(v || ''));
+  if (!m) return '';
+  let h = parseInt(m[1], 10);
+  const mi = parseInt(m[2], 10);
+  if (m[3]) { const pm = m[3].toLowerCase() === 'p'; if (h === 12) h = pm ? 12 : 0; else if (pm) h += 12; }
+  if (h > 23 || mi > 59) return '';
+  return `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`;
+};
+
+const sanitizeScan = (kind, raw) => {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(String(raw.date || '')) && mt(raw.date, DATE_FMT).isValid() ? raw.date : '';
+  if (kind === 'order') {
+    const out = { orderNo: String(raw.orderNo || '').replace(/\D/g, '').slice(0, 12), date: d, accept: cleanTime(raw.acceptTime), delivery: cleanTime(raw.deliveryTime) };
+    return out.orderNo || out.accept || out.delivery ? out : null;
+  }
+  const amount = parseFloat(raw.amount);
+  const liters = parseFloat(raw.liters);
+  const out = { odo: String(raw.odometer || '').replace(/\D/g, '').slice(0, 9), amount: amount > 0 ? r2(amount) : 0, liters: liters > 0 ? r2(liters) : 0, date: d, time: cleanTime(raw.time) };
+  return out.odo || out.amount || out.liters ? out : null;
+};
+
+const aiError = (code, detail) => { const e = new Error(code); e.code = code; e.detail = detail; return e; };
+async function callAI({ provider, key, model, kind, dataUrl }) {
+  const prompt = scanPrompt(kind);
+  const mdl = model || AI_DEFAULTS[provider];
+  let res;
+  try {
+    if (provider === 'openai') {
+      res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model: mdl, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: dataUrl } }] }] })
+      });
+    } else {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: dataUrl.split(',')[1] } }] }], generationConfig: { temperature: 0, responseMimeType: 'application/json' } })
+      });
+    }
+  } catch (e) { throw aiError('net'); }
+  let body = null;
+  try { body = await res.json(); } catch (e) { body = null; }
+  if (!res.ok) throw aiError(res.status === 429 || res.status >= 500 ? 'quota' : 'key', (body && body.error && (body.error.message || body.error.status)) || `HTTP ${res.status}`);
+  let text = '';
+  if (provider === 'openai') text = body && body.choices && body.choices[0] && body.choices[0].message ? body.choices[0].message.content : '';
+  else text = body && body.candidates && body.candidates[0] && body.candidates[0].content && body.candidates[0].content.parts ? body.candidates[0].content.parts.map((p) => p.text || '').join('') : '';
+  const m = String(text || '').match(/\{[\s\S]*\}/);
+  if (!m) throw aiError('parse');
+  try { return JSON.parse(m[0]); } catch (e) { throw aiError('parse'); }
+}
+
+function ScanModal({ onClose, onResult, isAdmin, onOpenSettings }) {
+  const { t } = useI18n();
+  const [kind, setKind] = useState('order');
+  const [img, setImg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const camRef = useRef(null);
+  const galRef = useRef(null);
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
+  const hasKey = !!loadAI().key;
+  const noKeyText = t(isAdmin ? 'scan.noKeyAdmin' : 'scan.noKeyUser');
+
+  async function run(dataUrl, conf, k) {
+    setBusy(true); setErr(null);
+    try {
+      const raw = await callAI({ ...conf, kind: k, dataUrl });
+      const data = sanitizeScan(k, raw);
+      if (!data) { if (alive.current) setErr({ text: t('scan.nothing') }); return; }
+      onResult(k, data);
+    } catch (e) {
+      const map = { net: 'scan.errNet', quota: 'scan.errQuota', parse: 'scan.errParse', key: 'scan.errKey' };
+      // users cannot fix a bad key, so tell them to contact the administrator instead of showing details
+      const detail = isAdmin && e.detail ? String(e.detail).slice(0, 220) : '';
+      if (alive.current) setErr({ text: t(map[e.code] || 'scan.errNet'), detail });
+    } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
+
+  async function onFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setErr(null);
+    let url = '';
+    try { url = await imageToJpeg(file); } catch (x) { setErr({ text: t('scan.errImage') }); return; }
+    setImg(url);
+    const conf = loadAI();
+    if (!conf.key) { setErr({ text: noKeyText }); return; }
+    run(url, conf, kind);
+  }
+
+  return (
+    <Modal title={t('scan.title')} icon="camera" onClose={onClose}
+      footer={(
+        <>
+          <button type="button" className="btn btn-quiet" onClick={onClose}>{t('btn.close')}</button>
+          {!hasKey && isAdmin && <button type="button" className="btn btn-primary" onClick={onOpenSettings}><Icon n="gear" /> {t('scan.goSettings')}</button>}
+          {img && !busy && hasKey && <button type="button" className="btn" onClick={() => run(img, loadAI(), kind)}><Icon n="rotate" /> {t('scan.again')}</button>}
+        </>
+      )}>
+      <p className="calc-note">{t('scan.hint')}</p>
+      {!hasKey && <div className="err" role="alert"><Icon n="circle-exclamation" /><span>{noKeyText}</span></div>}
+      <div className="seg scan-kind" role="group" aria-label={t('scan.title')}>
+        <button type="button" aria-pressed={kind === 'order'} onClick={() => setKind('order')}>{t('scan.kindOrder')}</button>
+        <button type="button" aria-pressed={kind === 'fuel'} onClick={() => setKind('fuel')}>{t('scan.kindFuel')}</button>
+      </div>
+      <div className="scan-actions">
+        <button type="button" className="scan-btn" disabled={busy || !hasKey} onClick={() => camRef.current && camRef.current.click()}><Icon n="camera" />{t('scan.take')}</button>
+        <button type="button" className="scan-btn" disabled={busy || !hasKey} onClick={() => galRef.current && galRef.current.click()}><Icon n="image" />{t('scan.choose')}</button>
+      </div>
+      <input ref={camRef} id="scan-cam" type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
+      <input ref={galRef} id="scan-gal" type="file" accept="image/*" hidden onChange={onFile} />
+      {img && <img className="scan-preview" src={img} alt="" />}
+      {busy && <div className="scan-busy" role="status"><i className="fa-solid fa-spinner spin" aria-hidden="true"></i> {t('scan.reading')}</div>}
+      {err && <div className="err" role="alert"><Icon n="circle-exclamation" /><span>{err.text}{err.detail ? <span className="detail">{err.detail}</span> : null}</span></div>}
+    </Modal>
+  );
+}
+
+/* ---------- administrator-only AI key settings (shown in Employees > Settings) ---------- */
+function AiSettings() {
+  const { t } = useI18n();
+  const [ai, setAi] = useState(() => cleanAI(load(LS_AI, null)));
+  const [saved, setSaved] = useState(() => !!cleanAI(load(LS_AI, null)).key);
+  const [showKey, setShowKey] = useState(false);
+  const builtIn = !saved && !!cleanAI(BUILT_IN_AI).key;
+
+  function saveKey() {
+    const next = { ...ai, key: ai.key.trim(), model: ai.model.trim() };
+    if (!next.key) { Dlg.fire({ icon: 'warning', text: t('ai.keyEmpty') }); return; }
+    setAi(next); save(LS_AI, next); setSaved(true);
+    Toast.fire({ icon: 'success', title: t('scan.aiSaved') });
+  }
+  function clearKey() {
+    const next = { ...ai, key: '' };
+    setAi(next); save(LS_AI, next); setSaved(false); setShowKey(false);
+    Toast.fire({ icon: 'success', title: t('ai.cleared') });
+  }
+
+  return (
+    <div>
+      <h3>{t('ai.title')}</h3>
+      <p>{t('ai.help')}</p>
+      <p style={{ color: saved || builtIn ? 'var(--ok)' : 'var(--danger)', fontWeight: 600 }}><Icon n={saved || builtIn ? 'circle-check' : 'circle-exclamation'} /> {saved ? t('ai.on') : builtIn ? t('ai.builtIn') : t('ai.off')}</p>
+      <div style={{ display: 'grid', gap: 10 }}>
+        <div className="field"><label htmlFor="a-prov">{t('scan.provider')}</label>
+          <select id="a-prov" className="input" value={ai.provider} onChange={(e) => setAi((p) => ({ ...p, provider: e.target.value, model: '' }))}>
+            <option value="gemini">{t('scan.gemini')}</option>
+            <option value="openai">{t('scan.openai')}</option>
+          </select>
+        </div>
+        <div className="field"><label htmlFor="a-model">{t('scan.model')}</label>
+          <input id="a-model" dir="ltr" className="input num" type="text" autoComplete="off" spellCheck="false" placeholder={AI_DEFAULTS[ai.provider]} value={ai.model} onChange={(e) => setAi((p) => ({ ...p, model: e.target.value }))} />
+        </div>
+        <div className="field"><label htmlFor="a-key">{t('scan.key')}</label>
+          <div className="pwrap">
+            <input id="a-key" dir="ltr" className="input" type={showKey ? 'text' : 'password'} autoComplete="off" spellCheck="false" value={ai.key} onChange={(e) => setAi((p) => ({ ...p, key: e.target.value }))} />
+            <button type="button" className="icon-btn" aria-label={showKey ? t('login.hide') : t('login.show')} onClick={() => setShowKey((s) => !s)}><Icon n={showKey ? 'eye-slash' : 'eye'} /></button>
+          </div>
+        </div>
+        <div className="row" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <button type="button" className="btn btn-primary" onClick={saveKey}><Icon n="floppy-disk" /> {t('scan.saveAI')}</button>
+          {saved && <button type="button" className="btn btn-quiet" onClick={clearKey}><Icon n="trash" /> {t('ai.clear')}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- "More" menu used by the mobile bottom bar ---------- */
+function MoreSheet({ me, isStaff, lang, setLang, onTab, onSop, onPassword, onLogout, onClose }) {
+  const { t } = useI18n();
+  const go = (fn) => () => { onClose(); fn(); };
+  return (
+    <Modal title={me.name} icon="user" onClose={onClose}
+      footer={<button type="button" className="btn btn-primary" onClick={onClose}>{t('btn.close')}</button>}>
+      <div><RoleBadge role={me.role} /></div>
+      <div className="menu">
+        {isStaff && <button type="button" className="menu-btn" onClick={go(() => onTab('employees'))}><Icon n="users" /> {t('tab.employees')}</button>}
+        <button type="button" className="menu-btn" onClick={go(onSop)}><Icon n="book" /> {t('sop.title')}</button>
+        <button type="button" className="menu-btn" onClick={go(onPassword)}><Icon n="key" /> {t('nav.password')}</button>
+        <button type="button" className="menu-btn danger" onClick={go(onLogout)}><Icon n="right-from-bracket" /> {t('nav.logout')}</button>
+      </div>
+      <LangPick lang={lang} setLang={setLang} light />
+    </Modal>
+  );
+}
+
+/* ---------- login page ---------- */
+function LoginPage({ users, onLogin, lang, setLang }) {
+  const { t } = useI18n();
+  const [username, setUsername] = useState('');
+  const [pass, setPass] = useState('');
+  const [show, setShow] = useState(false);
+  const [keep, setKeep] = useState(true);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const firstTime = users.some((u) => u.defaultPw);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true); setErr('');
+    const u = users.find((x) => x.username.toLowerCase() === username.trim().toLowerCase());
+    const ok = u ? await checkPw(pass, u) : false;
+    if (!ok) { await new Promise((r) => setTimeout(r, 350)); setErr(t('login.bad')); setBusy(false); return; }
+    if (!u.active) { setErr(t('login.inactive')); setBusy(false); return; }
+    onLogin(u.id, keep);
+  }
+
+  return (
+    <div className="login">
+      <aside className="login-side" aria-label={t('login.sopTitle')}>
+        <div className="login-brand">
+          <Logo />
+          <div><div className="brand-name">Keeta</div><div className="brand-sub">{t('login.tag')}</div></div>
+        </div>
+        <div>
+          <h2>{t('login.sopTitle')}</h2>
+          <p className="lead">{t('login.sopSub')}</p>
+        </div>
+        <SopFlow />
+      </aside>
+      <main className="login-main">
+        <div className="login-lang"><LangPick lang={lang} setLang={setLang} light /></div>
+        <form className="login-card" onSubmit={submit} noValidate>
+          <div><h1>{t('login.title')}</h1><p className="lead">{t('login.sub')}</p></div>
+          <div className="field">
+            <label htmlFor="l-user">{t('login.user')}</label>
+            <div className="iwrap"><Icon n="user" /><input id="l-user" dir="ltr" className="input" type="text" autoComplete="username" autoCapitalize="none" spellCheck="false" placeholder={t('login.userPh')} value={username} onChange={(e) => setUsername(e.target.value)} autoFocus /></div>
+          </div>
+          <div className="field">
+            <label htmlFor="l-pass">{t('login.pass')}</label>
+            <div className="pwrap">
+              <input id="l-pass" dir="ltr" className="input" type={show ? 'text' : 'password'} autoComplete="current-password" placeholder={t('login.passPh')} value={pass} onChange={(e) => setPass(e.target.value)} />
+              <button type="button" className="icon-btn" aria-label={show ? t('login.hide') : t('login.show')} title={show ? t('login.hide') : t('login.show')} onClick={() => setShow((s) => !s)}><Icon n={show ? 'eye-slash' : 'eye'} /></button>
+            </div>
+          </div>
+          <label className="check"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} /> {t('login.keep')}</label>
+          {err && <div className="err" role="alert"><Icon n="circle-exclamation" /> {err}</div>}
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy || !username || !pass}><Icon n="right-to-bracket" /> {t('login.btn')}</button>
+          {firstTime && <div className="note"><Icon n="circle-info" /><span>{t('login.first')}</span></div>}
+        </form>
+        <RoleList />
+      </main>
+    </div>
+  );
+}
+
+/* ---------- app ---------- */
+function detectLang() {
+  const saved = load(LS_LANG, null);
+  if (saved && LANGS.some((l) => l.code === saved)) return saved;
+  const nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  return LANGS.some((l) => l.code === nav) ? nav : 'en';
+}
+
+function App() {
+  const [orders, setOrders] = useState(() => load(LS_ORDERS, []));
+  const [fuel, setFuel] = useState(() => load(LS_FUEL, []));
+  const [users, setUsers] = useState(() => load(LS_USERS, []));
+  const [price, setPrice] = useState(() => String(load(LS_PRICE, DEFAULT_PRICE)));
+  const [lang, setLang] = useState(detectLang);
+  const [tab, setTab] = useState('orders');
+  const [sessionId, setSessionId] = useState(readSession);
+  const [dialog, setDialog] = useState(null); // 'sop' | 'password' | 'scan' | 'more'
+  const [scanned, setScanned] = useState(null);
+  const [aiRev, setAiRev] = useState(0);
+  const [booting, setBooting] = useState(() => load(LS_USERS, []).length === 0);
+
+  useEffect(() => { save(LS_ORDERS, orders); }, [orders]);
+  useEffect(() => { save(LS_FUEL, fuel); }, [fuel]);
+  useEffect(() => { if (users.length) save(LS_USERS, users); }, [users]);
+  useEffect(() => { save(LS_PRICE, price); }, [price]);
+
+  // first run: create the default administrator
+  useEffect(() => {
+    if (users.length) return;
+    (async () => {
+      const salt = randSalt();
+      const admin = { id: uid(), createdAt: Date.now(), empNo: 'EMP-001', name: 'Administrator', role: 'admin', username: 'admin', salt, hash: await hashPw('admin123', salt), active: true, iqama: '', iqamaExp: '', nation: '', phone: '', plate: '', vtype: 'motorcycle', allowance: 0, joined: today(), defaultPw: true };
+      setUsers([admin]);
+      setBooting(false);
+    })();
+  }, []);
+
+  const me = users.find((u) => u.id === sessionId && u.active) || null;
+  useEffect(() => { if (sessionId && users.length && !me) { writeSession(null); setSessionId(null); } }, [sessionId, users, me]);
+
+  const info = LANGS.find((l) => l.code === lang) || LANGS[0];
+  MLOC = info.moment; // read by the date formatters during this render
+  useEffect(() => {
+    document.documentElement.lang = info.code;
+    document.documentElement.dir = info.dir;
+    save(LS_LANG, info.code);
+  }, [info.code]);
+  const ctx = useMemo(() => {
+    const t = makeT(info.code);
+    return { lang: info.code, dir: info.dir, t, dur: durFormatter(t) };
+  }, [info.code]);
+  const t = ctx.t;
+
+  const isStaff = !!me && me.role !== 'user';
+  const tabs = [['orders', 'table-list', 'tab.orders'], ['fuel', 'gas-pump', 'tab.fuel'], ['report', 'chart-column', 'tab.report'], ...(isStaff ? [['employees', 'users', 'tab.employees']] : [])];
+  const active = tabs.some((x) => x[0] === tab) ? tab : 'orders';
+
+  function login(id, keep) { writeSession(id, keep); setSessionId(id); setTab('orders'); }
+  function onScanResult(kind, data) { setScanned({ id: Date.now(), kind, data }); setTab(kind === 'order' ? 'orders' : 'fuel'); setDialog(null); }
+  function logout() { writeSession(null); setSessionId(null); setDialog(null); }
+  async function changePassword(next) {
+    const salt = randSalt();
+    const hash = await hashPw(next, salt);
+    setUsers((l) => l.map((u) => (u.id === me.id ? { ...u, salt, hash, defaultPw: false } : u)));
+    Toast.fire({ icon: 'success', title: t('toast.pwSaved') });
+  }
+  const backupData = () => { const k = cleanAI(load(LS_AI, null)); return { app: 'keeta', version: 2, exportedAt: new Date().toISOString(), price, orders, fuel, users, ...(k.key ? { ai: k } : {}) }; };
+  const restoreAll = (d) => { setOrders(d.orders); setFuel(d.fuel); setUsers(d.users); if (d.price) setPrice(String(d.price)); if (d.ai && d.ai.key) { save(LS_AI, cleanAI(d.ai)); setAiRev((n) => n + 1); } };
+
+  // nudge the administrator to replace the default password
+  const nudged = useRef(false);
+  useEffect(() => {
+    if (me && me.defaultPw && !nudged.current) {
+      nudged.current = true;
+      Dlg.fire({ icon: 'warning', title: t('pw.defTitle'), text: t('pw.defText'), showCancelButton: true, confirmButtonText: t('pw.title'), cancelButtonText: t('pw.later') })
+        .then((r) => { if (r.isConfirmed) setDialog('password'); });
+    }
+  }, [me && me.id]);
+
+  if (booting) return null;
+
+  if (!me) {
+    return (
+      <LangCtx.Provider value={ctx}>
+        <LoginPage users={users} onLogin={login} lang={lang} setLang={setLang} />
+      </LangCtx.Provider>
+    );
+  }
+
+  return (
+    <LangCtx.Provider value={ctx}>
+      <header className="topbar no-print">
+        <div className="topbar-in">
+          <div className="brand">
+            <Logo />
+            <div>
+              <div className="brand-name">Keeta</div>
+              <div className="brand-sub">{t('app.sub')} · {fm(moment(), 'ddd, DD MMM YYYY')}</div>
+            </div>
+          </div>
+          <button type="button" className="btn btn-primary scan-top" onClick={() => setDialog('scan')}><Icon n="camera" /> {t('nav.scan')}</button>
+          <LangPick lang={lang} setLang={setLang} />
+          <div className="userchip">
+            <div className="who"><b>{me.name}</b><RoleBadge role={me.role} /></div>
+            <button type="button" className="tb-btn" title={t('nav.sop')} aria-label={t('nav.sop')} onClick={() => setDialog('sop')}><Icon n="book" /></button>
+            <button type="button" className="tb-btn" title={t('nav.password')} aria-label={t('nav.password')} onClick={() => setDialog('password')}><Icon n="key" /></button>
+            <button type="button" className="tb-btn" title={t('nav.logout')} aria-label={t('nav.logout')} onClick={logout}><Icon n="right-from-bracket" /></button>
+          </div>
+        </div>
+        <div className="tabs" role="tablist">
+          {tabs.map(([k, ic, label]) => (
+            <button key={k} type="button" role="tab" className="tab" aria-selected={active === k} onClick={() => setTab(k)}><Icon n={ic} /> {t(label)}</button>
+          ))}
+        </div>
+      </header>
+      <main className="page">
+        {active === 'orders' && <OrdersTab orders={orders} setOrders={setOrders} users={users} me={me} scanned={scanned} onScanUsed={() => setScanned(null)} />}
+        {active === 'fuel' && <FuelTab fuel={fuel} setFuel={setFuel} users={users} me={me} price={price} scanned={scanned} onScanUsed={() => setScanned(null)} />}
+        {active === 'report' && <ReportTab orders={orders} fuel={fuel} users={users} me={me} />}
+        {active === 'employees' && isStaff && <EmployeesTab key={aiRev} users={users} setUsers={setUsers} fuel={fuel} me={me} price={price} setPrice={setPrice} restoreAll={restoreAll} backupData={backupData} />}
+      </main>
+      <nav className="bottomnav no-print" aria-label={t('app.sub')}>
+        {[['orders', 'table-list', 'tab.orders'], ['fuel', 'gas-pump', 'tab.fuel']].map(([k, ic, label]) => (
+          <button key={k} type="button" className="bn-item" aria-current={active === k ? 'page' : undefined} onClick={() => setTab(k)}><Icon n={ic} /><span>{t(label)}</span></button>
+        ))}
+        <button type="button" className="bn-item bn-scan" onClick={() => setDialog('scan')}><Icon n="camera" /><span>{t('nav.scan')}</span></button>
+        <button type="button" className="bn-item" aria-current={active === 'report' ? 'page' : undefined} onClick={() => setTab('report')}><Icon n="chart-column" /><span>{t('tab.report')}</span></button>
+        <button type="button" className="bn-item" aria-current={active === 'employees' ? 'page' : undefined} onClick={() => setDialog('more')}><Icon n="bars" /><span>{t('nav.more')}</span></button>
+      </nav>
+      {dialog === 'scan' && <ScanModal onClose={() => setDialog(null)} onResult={onScanResult} isAdmin={me.role === 'admin'} onOpenSettings={() => { setDialog(null); setTab('employees'); }} />}
+      {dialog === 'more' && <MoreSheet me={me} isStaff={isStaff} lang={lang} setLang={setLang} onTab={setTab} onSop={() => setDialog('sop')} onPassword={() => setDialog('password')} onLogout={logout} onClose={() => setDialog(null)} />}
+      {dialog === 'sop' && <SopModal onClose={() => setDialog(null)} />}
+      {dialog === 'password' && <PasswordModal me={me} onSave={changePassword} onClose={() => setDialog(null)} />}
+      <Watermark />
+    </LangCtx.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+</body>
+</html>

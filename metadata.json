@@ -1,0 +1,6 @@
+{
+  "name": "Keeta Delivery Timeline & Fuel Tracker",
+  "description": "AI-powered delivery timeline scanner and performance reporter. Captures order screenshots to extract last 4 digits, accept, store arrival, pickup, destination, customer arrival, and expected delivery times with comprehensive transit and delay analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

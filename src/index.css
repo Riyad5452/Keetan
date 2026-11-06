@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f3f4f0;
+  --surface: #ffffff;
+  --ink: #16181b;
+  --muted: #5d646c;
+  --line: #dfe2dc;
+  --accent: #ffd21f;
+  --accent-ink: #16181b;
+  --accent-soft: #fff6c7;
+  --danger: #dc2626;
+  --ok: #15803d;
+  --radius: 12px;
+  --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --body: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'DM Mono', ui-monospace, Consolas, monospace;
+}
+
+html[lang="ar"], html[lang="ur"] {
+  --display: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+  --body: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}
+
+html[lang="bn"] {
+  --display: 'Noto Sans Bengali', 'Nirmala UI', sans-serif;
+  --body: 'Noto Sans Bengali', 'Nirmala UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--display);
+}
+
+.font-mono-tabular {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Layout */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body {
+    background: transparent !important;
+    color: #000 !important;
+    font-size: 11px !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .sheet-print {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  th, td {
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 4px 6px !important;
+    font-size: 10.5px !important;
+  }
+  thead {
+    display: table-header-group !important;
+  }
+  tr {
+    break-inside: avoid !important;
+  }
+  .watermark {
+    display: block !important;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 55%;
+    max-width: 140mm;
+    transform: translate(-50%, -50%);
+    opacity: 0.08 !important;
+    z-index: -1;
+    pointer-events: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
